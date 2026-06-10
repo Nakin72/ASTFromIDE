@@ -1,0 +1,92 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using AstroEditor.Core.Types; // Для вашего BaseType
+
+namespace AstroEditor.Core.ObjectModel
+{
+    // 0. ПЕРЕЧИСЛЕНИЕ ДЛЯ БЫСТРОГО ОПРЕДЕЛЕНИЯ ТИПА УЗЛА ЯДРОМ
+    public enum AstNodeType
+    {
+        Functional,
+        Operator,
+        MacroCall,
+        Slot
+    }
+
+    // БАЗОВЫЙ АБСТРАКТНЫЙ КЛАСС (Вместо интерфейса I_AstNode)
+    public abstract class AstNode
+    {
+        public string Id { get; } = Guid.NewGuid().ToString();
+
+        // Каждому токену придется сказать ядру, какой он группы
+        public abstract AstNodeType NodeType { get; }
+
+        public abstract string ToTuiString();
+    }
+
+    // 1. УНИВЕРСАЛЬНЫЙ ФУНКЦИОНАЛЬНЫЙ ТОКЕН (Переменная / Массив / Константа)
+    public class FunctionalToken : AstNode
+    {
+        public override AstNodeType NodeType => AstNodeType.Functional;
+        public BaseType? ReturnType { get; set; }
+
+        // Поля данных
+        public string Name { get; set; } = string.Empty;          // "foo", "flag", "125"
+
+        // Ссылка на параметр может быть null, если это не массив (ставим значок '?')
+        public AstNode? Parameter { get; set; }                     // То, что в []
+        public string Comment { get; set; } = string.Empty;       // Комментарий/Лейбл
+        public string Value { get; set; } = string.Empty;         // Значение
+
+        public override string ToTuiString()
+        {
+            string result = Name;
+            if (Parameter != null) result += $"[{Parameter.ToTuiString()}]";
+            if (!string.IsNullOrEmpty(Comment)) result += $":({Comment})";
+            if (!string.IsNullOrEmpty(Value)) result += $": {Value}";
+            return result;
+        }
+    }
+
+    // 2. ТОКЕН ОПЕРАТОРА (+, -, *, <=>)
+    public class OperatorToken : AstNode
+    {
+        public override AstNodeType NodeType => AstNodeType.Operator;
+
+        public string Symbol { get; set; } = string.Empty;  // "+", "=>"
+        public BaseType ReturnType => BaseType.Void;
+
+        public override string ToTuiString() => $" {Symbol} ";
+    }
+
+    // 3. ТОКЕН ВОЗВРАЩАЮЩЕГО МАКРОСА / ФУНКЦИИ (sin(...), ReadSensor())
+    public class MacroCallToken : AstNode
+    {
+        public override AstNodeType NodeType => AstNodeType.MacroCall;
+
+        public string MacroName { get; set; } = string.Empty; // "sin", "ReadLaser"
+        public BaseType? ReturnType { get; set; }
+
+        // Теперь список хранит жесткие AstNode. Ошибки приведения типов больше не будет!
+        public List<AstNode> Arguments { get; set; } = new();
+
+        public override string ToTuiString()
+        {
+            var argsStr = string.Join(", ", Arguments.Select(a => a.ToTuiString()));
+            return $"{MacroName}({argsStr})";
+        }
+    }
+
+    // 4. ПУСТОЙ ТОКЕН-СЛОТ (Placeholder)
+    public class SlotToken : AstNode
+    {
+        public override AstNodeType NodeType => AstNodeType.Slot;
+
+        public BaseType? ExpectedType { get; set; }
+        public string Label { get; set; } = "???";
+
+        public BaseType? ReturnType => ExpectedType;
+        public override string ToTuiString() => $"[{Label}]";
+    }
+}

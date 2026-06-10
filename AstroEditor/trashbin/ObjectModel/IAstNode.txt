@@ -1,0 +1,14 @@
+using System;
+using System.Collections.Generic;
+using  AstroEditor.Core.Types;
+namespace AstroEditor.Core.ObjectModel
+{
+    // --- БАЗОВЫЙ ИНТЕРФЕЙС УЗЛА AST ---
+    // Общий интерфейс для всего, что возвращает значение или является оператором
+    public interface I_AstNode
+    {
+        string Id { get; }
+        string ToTuiString(); // Рендеринг для SharpConsoleUI
+        BaseType ReturnType { get; } // Для контроля типов на лету
+    }
+}

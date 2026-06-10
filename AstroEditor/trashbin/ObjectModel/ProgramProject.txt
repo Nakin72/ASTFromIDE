@@ -1,0 +1,10 @@
+namespace AstroEditor.Core.ObjectModel
+{
+    public class ProgramProject
+    {
+        public required string Name { get; set; }
+
+        // Программа состоит из строк
+        public List<Line> Lines { get; set; } = new();
+    }
+}

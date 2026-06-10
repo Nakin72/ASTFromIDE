@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj": {}
+    "c:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj": {}
   },
   "projects": {
-    "C:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj": {
+    "c:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj",
+        "projectUniqueName": "c:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj",
         "projectName": "ASTFromIDE",
-        "projectPath": "C:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj",
+        "projectPath": "c:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj",
         "packagesPath": "C:\\Users\\repac\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\obj\\",
+        "outputPath": "c:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\repac\\AppData\\Roaming\\NuGet\\NuGet.Config"

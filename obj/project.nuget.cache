@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "2He49+Rg0Vs=",
+  "dgSpecHash": "OPYD7BM6nGU=",
   "success": true,
-  "projectFilePath": "C:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj",
+  "projectFilePath": "c:\\Users\\repac\\Documents\\projects\\DotNetProjects\\ASTFromIDE\\ASTFromIDE.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\repac\\.nuget\\packages\\anglesharp\\1.4.0\\anglesharp.1.4.0.nupkg.sha512",
     "C:\\Users\\repac\\.nuget\\packages\\anglesharp.css\\1.0.0-beta.213\\anglesharp.css.1.0.0-beta.213.nupkg.sha512",

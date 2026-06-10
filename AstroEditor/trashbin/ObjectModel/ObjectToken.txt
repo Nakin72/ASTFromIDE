@@ -1,0 +1,23 @@
+using AstroEditor.Core.Types;
+namespace AstroEditor.Core.ObjectModel
+{
+    // ТОКЕН ОБЪЕКТА
+    public class ObjectToken : AstNode
+    {
+        public override AstNodeType NodeType => AstNodeType.Object;
+
+        public string Name { get; set; } = string.Empty;
+        public AstNode? ArrayIndex { get; set; }
+        public string Comment { get; set; } = string.Empty;
+        public AstNode? Value { get; set; }
+
+        public override string ToTuiString()
+        {
+            string res = Name;
+            if (ArrayIndex != null) res += $"[{ArrayIndex.ToTuiString()}]";
+            if (Value != null) res += $": {Value.ToTuiString()}";
+            if (!string.IsNullOrEmpty(Comment)) res += $" :({Comment})";
+            return res;
+        }
+    }
+}

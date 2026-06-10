@@ -1,0 +1,177 @@
+using System;
+using AstroEditor.Core.Memory;
+using AstroEditor.Core.ObjectModel; // Убедитесь, что здесь лежат ваши ConstantToken, OperatorToken, ObjectToken
+using AstroEditor.Core.Ast;
+
+    namespace AstroEditor.Core.Runtime
+{
+    public class ExecutionEngine
+    {
+        private readonly ProgramContext _context;
+
+        public ExecutionEngine(ProgramContext context)
+        {
+            _context = context;
+        }
+
+        // 1. ЧТЕНИЕ С УЧЕТОМ ОБЛАСТИ ВИДИМОСТИ (ИСПРАВЛЯЕТ CS0103)
+        public string GetVariableValue(string varName)
+        {
+            VariableStorage storage = null;
+
+            // Сначала ищем в локальных переменных программы
+            if (_context.LocalVariables.TryGetValue(varName, out var local))
+            {
+                storage = local;
+            }
+            // Если не нашли, ищем в глобальной памяти системы (если этот класс у вас реализован)
+            // Иначе можно временно закомментировать этот блок
+            else if (GlobalSystemMemory.Variables.TryGetValue(varName, out var global))
+            {
+                storage = global;
+            }
+
+            if (storage == null)
+                throw new Exception($"Переменная или регистр '{varName}' не найден в локальной или глобальной памяти.");
+
+            // Обработка реактивного оператора связи <=>
+            if (storage.IsReference)
+            {
+                return GetVariableValue(storage.ReferenceTarget); // Рекурсивный обход ссылки
+            }
+
+            return storage.RawValue;
+        }
+
+        // 2. ЗАПИСЬ С УЧЕТОМ ОБЛАСТИ ВИДИМОСТИ (ИСПРАВЛЯЕТ CS1061)
+        public void SetVariableValue(string varName, string newValue)
+        {
+            VariableStorage storage = null;
+
+            if (_context.LocalVariables.TryGetValue(varName, out var local)) storage = local;
+            else if (GlobalSystemMemory.Variables.TryGetValue(varName, out var global)) storage = global;
+
+            if (storage == null)
+                throw new Exception($"Некуда писать: переменная '{varName}' не существует.");
+
+            if (storage.IsReference)
+            {
+                SetVariableValue(storage.ReferenceTarget, newValue); // Пишем напрямую в цель
+                return;
+            }
+
+            storage.RawValue = newValue;
+        }
+
+        // 3. РЕАЛИЗАЦИЯ СВЯЗЫВАНИЯ <=> (ИСПРАВЛЯЕТ CS1061)
+        public void BindVariables(string aliasName, string targetName)
+        {
+            if (_context.LocalVariables.TryGetValue(aliasName, out var local))
+            {
+                local.IsReference = true;
+                local.ReferenceTarget = targetName;
+            }
+            else if (GlobalSystemMemory.Variables.TryGetValue(aliasName, out var global))
+            {
+                global.IsReference = true;
+                global.ReferenceTarget = targetName;
+            }
+            else
+            {
+                throw new Exception($"Переменная-алиас '{aliasName}' должна быть сначала объявлена в программе.");
+            }
+        }
+
+        // 4. УНИВЕРСАЛЬНЫЙ ВЫЧИСЛИТЕЛЬ ПОЛЯ
+        public string EvaluateField(Field field)
+        {
+            if (field == null || field.DataNodes.Count == 0) return string.Empty;
+
+            if (field.DataNodes.Count == 1)
+            {
+                return ResolveNodeValue(field.DataNodes[0]);
+            }
+
+            string currentResult = string.Empty;
+            string currentOp = string.Empty;
+
+            foreach (var node in field.DataNodes)
+            {
+                if (node is OperatorToken opTok) // ТЕПЕРЬ CS0246 УЙДЕТ, ТАК КАК ПОДКЛЮЧЕН СТРУКТУРНЫЙ НЕЙМСПЕЙС
+                {
+                    currentOp = opTok.Symbol;
+                }
+                else
+                {
+                    string value = ResolveNodeValue(node);
+
+                    if (string.IsNullOrEmpty(currentResult))
+                    {
+                        currentResult = value;
+                    }
+                    else if (!string.IsNullOrEmpty(currentOp))
+                    {
+                        currentResult = EvaluateExpression(currentResult, currentOp, value);
+                        currentOp = string.Empty;
+                    }
+                }
+            }
+
+            return currentResult;
+        }
+
+        // Вспомогательный метод разрешения узлов
+        private string ResolveNodeValue(AstNode node)
+        {
+            if (node == null) return string.Empty;
+
+            switch (node.NodeType)
+            {
+                case AstNodeType.Constant:
+                    // Явное приведение типов. Компилятор пропустит это без вопросов!
+                    var constTok = (ConstantToken)node;
+                    return constTok.RawValue;
+
+                case AstNodeType.Object:
+                    var objTok = (ObjectToken)node;
+                    return GetVariableValue(objTok.Name);
+
+                default:
+                    // Для операторов и макросов просто возвращаем их текстовый вид
+                    return node.ToTuiString();
+            }
+        }
+
+        // 5. МАТЕМАТИЧЕСКИЙ И ЛОГИЧЕСКИЙ ДВИЖОК
+        public string EvaluateExpression(string leftVal, string op, string rightVal)
+        {
+            if (double.TryParse(leftVal, out double lNum) && double.TryParse(rightVal, out double rNum))
+            {
+                return op switch
+                {
+                    "+" => (lNum + rNum).ToString(),
+                    "-" => (lNum - rNum).ToString(),
+                    "*" => (lNum * rNum).ToString(),
+                    "/" => (lNum / rNum).ToString(),
+                    ">" => (lNum > rNum).ToString().ToUpper(),
+                    "<" => (lNum < rNum).ToString().ToUpper(),
+                    "==" => (lNum == rNum).ToString().ToUpper(),
+                    _ => throw new NotSupportedException($"Оператор {op} не поддерживается для чисел.")
+                };
+            }
+
+            if (bool.TryParse(leftVal, out bool lBool) && bool.TryParse(rightVal, out bool rBool))
+            {
+                return op switch
+                {
+                    "AND" => (lBool && rBool).ToString().ToUpper(),
+                    "OR" => (lBool || rBool).ToString().ToUpper(),
+                    "==" => (lBool == rBool).ToString().ToUpper(),
+                    _ => throw new NotSupportedException($"Оператор {op} не поддерживается для Bool.")
+                };
+            }
+
+            throw new Exception($"Несоответствие типов при вычислении: '{leftVal}' {op} '{rightVal}'");
+        }
+    }
+}

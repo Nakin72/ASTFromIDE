@@ -1,5 +1,14 @@
 namespace AstroEditor.Core.Types
 {
+    // Базовые атомарные типы данных ядра
+    public enum BaseType { Number, Bool, String, Void }
+
+    public class DataType
+    {
+        public required string Name { get; set; } // "Number", "Position", "MyStruct"
+        public bool IsCustom { get; set; } // Создан пользователем или системный
+        public Dictionary<string, DataType> Fields { get; set; } = new(); // Для структур
+    }
     // Перечисление для быстрой проверки типа в коде ядра
     public enum BaseTypeCode
     {

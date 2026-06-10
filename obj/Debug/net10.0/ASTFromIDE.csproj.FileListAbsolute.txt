@@ -20,3 +20,4 @@ c:\Users\repac\Documents\projects\DotNetProjects\ASTFromIDE\bin\Debug\net10.0\AS
 c:\Users\repac\Documents\projects\DotNetProjects\ASTFromIDE\bin\Debug\net10.0\ASTFromIDE.pdb
 c:\Users\repac\Documents\projects\DotNetProjects\ASTFromIDE\obj\Debug\net10.0\ASTFromIDE.genruntimeconfig.cache
 c:\Users\repac\Documents\projects\DotNetProjects\ASTFromIDE\obj\Debug\net10.0\ref\ASTFromIDE.dll
+c:\Users\repac\Documents\projects\DotNetProjects\ASTFromIDE\obj\Debug\net10.0\ASTFromIDE.sourcelink.json

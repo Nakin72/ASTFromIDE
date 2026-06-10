@@ -1,0 +1,15 @@
+using AstroEditor.Core.Types;
+
+namespace AstroEditor.Core.ObjectModel
+{
+    // ТОКЕН КОНСТАНТЫ
+    public class ConstantToken : AstNode
+    {
+        public override AstNodeType NodeType => AstNodeType.Constant;
+
+        public string RawValue { get; set; } = string.Empty;
+        public string DataType { get; set; } = string.Empty;
+
+        public override string ToTuiString() => RawValue;
+    }
+}

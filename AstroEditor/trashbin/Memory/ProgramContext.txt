@@ -1,0 +1,25 @@
+using System.Collections.Generic;
+using AstroEditor.Core.ObjectModel;
+
+namespace AstroEditor.Core.Memory
+{
+    public class ProgramContext
+    {
+        public string ProgramName { get; set; }
+
+        // ИСТИННО ЛОКАЛЬНЫЕ переменные (видны только в рамках этого файла)
+        public Dictionary<string, VariableStorage> LocalVariables { get; set; } = new();
+
+        // Тело программы (Строки с формами)
+        public List<Line> CodeLines { get; set; } = new();
+
+        // Индексы фокуса для восстановления UI
+        public int CurrentLineIndex { get; set; } = 0;
+        public int CurrentFieldIndex { get; set; } = 0;
+
+        public ProgramContext(string name)
+        {
+            ProgramName = name;
+        }
+    }
+}

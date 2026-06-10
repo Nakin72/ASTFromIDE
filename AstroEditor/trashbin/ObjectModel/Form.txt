@@ -1,0 +1,18 @@
+
+namespace AstroEditor.Core.ObjectModel
+{
+    // ==========================================
+    // УРОВЕНЬ 2: ФОРМЫ (КАРКАС СТРОКИ)
+    // ==========================================
+    public class Form
+    {
+        public string Id { get; } = Guid.NewGuid().ToString();
+        public required string  TemplateName { get; set; }   // "AssignmentForm", "IfThenForm"
+
+        // Форма состоит из полей
+        public List<Field> Fields { get; set; } = new();
+
+        // Текстовые разделители каркаса формы (например, ["IF ", " THEN "])
+        public List<string> StructuralSeparators { get; set; } = new();
+    }
+}

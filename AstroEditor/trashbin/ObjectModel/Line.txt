@@ -1,0 +1,15 @@
+namespace AstroEditor.Core.ObjectModel
+{
+
+    // ==========================================
+    // УРОВЕНЬ 1: СТРОКИ И ПРОГРАММА
+    // ==========================================
+    public class Line
+    {
+        public int LineNumber { get; set; }
+        public int IndentLevel { get; set; } = 0;
+
+        // Строка состоит из формы
+        public required Form CurrentForm { get; set; }
+    }
+}

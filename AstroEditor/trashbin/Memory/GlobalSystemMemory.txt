@@ -1,0 +1,18 @@
+using System.Collections.Generic;
+
+namespace AstroEditor.Core.Memory
+{
+    // Глобальная память ВСЕЙ системы (сквозные регистры/переменные)
+    public static class GlobalSystemMemory
+    {
+        // Сюда пишутся переменные с модификатором GLOBAL, системные I/O и регистры
+        public static Dictionary<string, VariableStorage> Variables { get; set; } = new();
+
+        static GlobalSystemMemory()
+        {
+            // Пример инициализации аппаратных портов по умолчанию
+            Variables["DO_1"] = new VariableStorage { Name = "DO_1", TypeName = "Bool", RawValue = "FALSE", Comment = "Main Valve" };
+            Variables["DI_1"] = new VariableStorage { Name = "DI_1", TypeName = "Bool", RawValue = "FALSE", Comment = "Safety Sensor" };
+        }
+    }
+}

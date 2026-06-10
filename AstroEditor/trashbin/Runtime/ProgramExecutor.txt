@@ -1,0 +1,126 @@
+using System;
+using System.Collections.Generic;
+using AstroEditor.Core.Memory;
+using AstroEditor.Core.ObjectModel; // Убедитесь, что подключен неймспейс моделей AST
+using System;
+
+namespace AstroEditor.Core.Runtime
+{
+    public class ProgramExecutor
+    {
+        private readonly ExecutionEngine _engine;
+        private readonly ProgramContext _context;
+        private int _currentLineIndex = 0;
+
+        // Карта переходов для IF/WHILE/FOR
+        private Dictionary<int, int> _jumpTable = new();
+
+        public ProgramExecutor(ProgramContext context, ExecutionEngine engine)
+        {
+            _context = context;
+            _engine = engine;
+            AnalyzeStructureAndBuildJumpTable();
+        }
+
+        private void AnalyzeStructureAndBuildJumpTable()
+        {
+            var ifStack = new Stack<int>();
+            var whileStack = new Stack<int>();
+
+            for (int i = 0; i < _context.CodeLines.Count; i++)
+            {
+                var formType = _context.CodeLines[i].CurrentForm.TemplateName;
+                if (formType == "IfForm") ifStack.Push(i);
+                if (formType == "ElseForm" || formType == "EndIfForm")
+                {
+                    if (ifStack.TryPop(out int ifLine))
+                    {
+                        _jumpTable[ifLine] = i;
+                    }
+                }
+
+                if (formType == "WhileForm") whileStack.Push(i);
+                if (formType == "EndWhileForm")
+                {
+                    if (whileStack.TryPop(out int whileLine))
+                    {
+                        _jumpTable[i] = whileLine;
+                        _jumpTable[whileLine] = i;
+                    }
+                }
+            }
+        }
+
+        // Один шаг выполнения программы (Интерпретация одной формы)
+        public void Step()
+        {
+            if (_currentLineIndex >= _context.CodeLines.Count) return;
+
+            var line = _context.CodeLines[_currentLineIndex];
+            var form = line.CurrentForm;
+
+            switch (form.TemplateName)
+            {
+                case "AssignmentForm": // value = 10 + 20 или value = 5
+                    // Извлекаем чистое имя переменной (куда пишем), убирая синтаксическое оформление токена объекта
+                    var targetNode = form.Fields[0].DataNodes[0];
+                    string varName = (targetNode is ObjectToken obj) ? obj.Name : targetNode.ToTuiString();
+
+                    // Безопасно вычисляем все правое поле целиком (хоть константу, хоть длинную цепочку математики)
+                    string res = _engine.EvaluateField(form.Fields[1]);
+
+                    _engine.SetVariableValue(varName, res);
+                    _currentLineIndex++;
+                    break;
+
+                case "BindForm": // alias <=> target
+                    var aliasNode = form.Fields[0].DataNodes[0];
+                    var targetNodeRef = form.Fields[1].DataNodes[0];
+
+                    string alias = (aliasNode is ObjectToken o1) ? o1.Name : aliasNode.ToTuiString();
+                    string target = (targetNodeRef is ObjectToken o2) ? o2.Name : targetNodeRef.ToTuiString();
+
+                    _engine.BindVariables(alias, target);
+                    _currentLineIndex++;
+                    break;
+
+                case "IfForm": // IF condition_expression THEN
+                    // Безопасно вычисляем все поле условия через универсальный метод
+                    bool isTrue = _engine.EvaluateField(form.Fields[0]) == "TRUE";
+
+                    if (isTrue) _currentLineIndex++;
+                    else _currentLineIndex = _jumpTable[_currentLineIndex];
+                    break;
+
+                case "WhileForm": // WHILE condition_expression
+                    // Вычисляем логическое выражение условия цикла
+                    bool isWhileTrue = _engine.EvaluateField(form.Fields[0]) == "TRUE";
+
+                    if (isWhileTrue) _currentLineIndex++;
+                    else _currentLineIndex = _jumpTable[_currentLineIndex] + 1;
+                    break;
+
+                case "EndWhileForm":
+                    _currentLineIndex = _jumpTable[_currentLineIndex];
+                    break;
+
+                case "CallForm": // CALL SubProgram
+                    var callNode = form.Fields[0].DataNodes[0];
+                    string subProgName = (callNode is ObjectToken o3) ? o3.Name : callNode.ToTuiString();
+
+                    ExecuteCall(subProgName);
+                    _currentLineIndex++;
+                    break;
+
+                default:
+                    _currentLineIndex++;
+                    break;
+            }
+        }
+
+        private void ExecuteCall(string subProgramName)
+        {
+            // Логика оператора CALL (Изолированный контекст подпрограммы)
+        }
+    }
+}
