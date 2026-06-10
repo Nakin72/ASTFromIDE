@@ -32,11 +32,26 @@ namespace AstroEditor.Core.Storage
         // Полностью восстановить работу среды из файла
         public static ProgramContext LoadSession(string filePath)
         {
+            // 1. Если файла не существует, возвращаем пустой контекст по умолчанию
             if (!File.Exists(filePath))
-                return null;
+            {
+                return new ProgramContext("NewProgram");
+            }
 
             string json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<ProgramContext>(json, _options);
+
+            // Десериализуем во временную nullable-переменную
+            ProgramContext? context = JsonSerializer.Deserialize<ProgramContext>(json, _options);
+
+            // 2. Если файл существовал, но внутри был пустой или поврежденный JSON (десериализатор вернул null)
+            // то мы также безопасно возвращаем чистый рабочий контекст
+            if (context == null)
+            {
+                return new ProgramContext("NewProgram");
+            }
+
+            // Здесь компилятор на 100% уверен, что context не равен null, ошибка CS8603 исчезает
+            return context;
         }
     }
 }

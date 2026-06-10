@@ -28,10 +28,10 @@ namespace AstroEditor.Core.ObjectModel
     public class FunctionalToken : AstNode
     {
         public override AstNodeType NodeType => AstNodeType.Functional;
-        public BaseType? ReturnType { get; set; }
+        public required CoreType ReturnType { get; set; }
 
         // Поля данных
-        public string Name { get; set; } = string.Empty;          // "foo", "flag", "125"
+        public required string Name { get; set; }          // "foo", "flag", "125"
 
         // Ссылка на параметр может быть null, если это не массив (ставим значок '?')
         public AstNode? Parameter { get; set; }                     // То, что в []
@@ -54,7 +54,7 @@ namespace AstroEditor.Core.ObjectModel
         public override AstNodeType NodeType => AstNodeType.Operator;
 
         public string Symbol { get; set; } = string.Empty;  // "+", "=>"
-        public BaseType ReturnType => BaseType.Void;
+        public CoreType ReturnType => CoreType.Void;
 
         public override string ToTuiString() => $" {Symbol} ";
     }
@@ -65,7 +65,7 @@ namespace AstroEditor.Core.ObjectModel
         public override AstNodeType NodeType => AstNodeType.MacroCall;
 
         public string MacroName { get; set; } = string.Empty; // "sin", "ReadLaser"
-        public BaseType? ReturnType { get; set; }
+        public CoreType? ReturnType { get; set; }
 
         // Теперь список хранит жесткие AstNode. Ошибки приведения типов больше не будет!
         public List<AstNode> Arguments { get; set; } = new();
@@ -82,10 +82,10 @@ namespace AstroEditor.Core.ObjectModel
     {
         public override AstNodeType NodeType => AstNodeType.Slot;
 
-        public BaseType? ExpectedType { get; set; }
+        public CoreType? ExpectedType { get; set; }
         public string Label { get; set; } = "???";
 
-        public BaseType? ReturnType => ExpectedType;
+        public CoreType? ReturnType => ExpectedType;
         public override string ToTuiString() => $"[{Label}]";
     }
 
@@ -98,55 +98,6 @@ namespace AstroEditor.Core.ObjectModel
         public string DataType { get; set; } = string.Empty;
 
         public override string ToTuiString() => RawValue;
-    }
-    // ==========================================
-    // УРОВЕНЬ 3: ПОЛЯ (КОНТЕЙНЕРЫ ДЛЯ ДАННЫХ)
-    // ==========================================
-    public class Field
-    {
-        public string Id { get; } = Guid.NewGuid().ToString();
-        public required string Name { get; set; }          // Имя слота ("Condition", "LeftValue")
-        public required string ExpectedDataType { get; set; }  // Ограничение типа ("Number", "Bool")
-
-        // В поле заносятся данные: функциональные токены или константы
-        public List<AstNode> DataNodes { get; set; } = new();
-
-        // Оформление самого поля (например, пробелы или запятые между токенами внутри поля)
-        public string Separator { get; set; } = " ";
-
-        public string ToTuiString()
-        {
-            return string.Join(Separator, DataNodes.ConvertAll(n => n.ToTuiString()));
-        }
-    }
-    // ==========================================
-    // УРОВЕНЬ 2: ФОРМЫ (КАРКАС СТРОКИ)
-    // ==========================================
-    public class Form
-    {
-        public string Id { get; } = Guid.NewGuid().ToString();
-        public required string TemplateName { get; set; }   // "AssignmentForm", "IfThenForm"
-
-        // Форма состоит из полей
-        public List<Field> Fields { get; set; } = new();
-
-        // Текстовые разделители каркаса формы (например, ["IF ", " THEN "])
-        public List<string> StructuralSeparators { get; set; } = new();
-    }
-   
-
-    
-
-    // ==========================================
-    // УРОВЕНЬ 1: СТРОКИ И ПРОГРАММА
-    // ==========================================
-    public class Line
-    {
-        public int LineNumber { get; set; }
-        public int IndentLevel { get; set; } = 0;
-
-        // Строка состоит из формы
-        public required Form CurrentForm { get; set; }
     }
     // ТОКЕН ОБЪЕКТА
     public class ObjectToken : AstNode
@@ -167,6 +118,57 @@ namespace AstroEditor.Core.ObjectModel
             return res;
         }
     }
+
+    // ==========================================
+    // УРОВЕНЬ 1: СТРОКИ И ПРОГРАММА
+    // ==========================================
+    public class Line
+    {
+        public int LineNumber { get; set; }
+        public int IndentLevel { get; set; } = 0;
+
+        // Строка состоит из формы
+        public required Form CurrentForm { get; set; }
+    }
+    
+    // ==========================================
+    // УРОВЕНЬ 2: ФОРМЫ (КАРКАС СТРОКИ)
+    // ==========================================
+    public class Form
+    {
+        public string Id { get; } = Guid.NewGuid().ToString();
+        public required string TemplateName { get; set; }   // "AssignmentForm", "IfThenForm"
+
+        // Форма состоит из полей
+        public List<Field> Fields { get; set; } = new();
+
+        // Текстовые разделители каркаса формы (например, ["IF ", " THEN "])
+        public List<string> StructuralSeparators { get; set; } = new();
+    }
+
+
+    // ==========================================
+    // УРОВЕНЬ 3: ПОЛЯ (КОНТЕЙНЕРЫ ДЛЯ ДАННЫХ)
+    // ==========================================
+    public class Field
+    {
+        public string Id { get; } = Guid.NewGuid().ToString();
+        public required string Name { get; set; }          // Имя слота ("Condition", "LeftValue")
+        public required string ExpectedDataType { get; set; }  // Ограничение типа ("Number", "Bool")
+
+        // В поле заносятся данные: функциональные токены или константы
+        public List<AstNode> DataNodes { get; set; } = new();
+
+        // Оформление самого поля (например, пробелы или запятые между токенами внутри поля)
+        public string Separator { get; set; } = " ";
+
+        public string ToTuiString()
+        {
+            return string.Join(Separator, DataNodes.ConvertAll(n => n.ToTuiString()));
+        }
+    }
+
+
 
     public class ProgramProject
     {

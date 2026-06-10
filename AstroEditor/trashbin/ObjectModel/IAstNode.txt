@@ -9,6 +9,6 @@ namespace AstroEditor.Core.ObjectModel
     {
         string Id { get; }
         string ToTuiString(); // Рендеринг для SharpConsoleUI
-        BaseType ReturnType { get; } // Для контроля типов на лету
+        CoreType ReturnType { get; } // Для контроля типов на лету
     }
 }

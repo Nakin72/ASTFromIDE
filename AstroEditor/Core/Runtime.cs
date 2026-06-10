@@ -18,7 +18,7 @@ namespace AstroEditor.Core.Runtime
         // 1. ЧТЕНИЕ С УЧЕТОМ ОБЛАСТИ ВИДИМОСТИ (ИСПРАВЛЯЕТ CS0103)
         public string GetVariableValue(string varName)
         {
-            VariableStorage storage = null;
+            VariableStorage? storage = null;
 
             // Сначала ищем в локальных переменных программы
             if (_context.LocalVariables.TryGetValue(varName, out var local))
@@ -47,7 +47,7 @@ namespace AstroEditor.Core.Runtime
         // 2. ЗАПИСЬ С УЧЕТОМ ОБЛАСТИ ВИДИМОСТИ (ИСПРАВЛЯЕТ CS1061)
         public void SetVariableValue(string varName, string newValue)
         {
-            VariableStorage storage = null;
+            VariableStorage? storage = null;
 
             if (_context.LocalVariables.TryGetValue(varName, out var local)) storage = local;
             else if (GlobalSystemMemory.Variables.TryGetValue(varName, out var global)) storage = global;

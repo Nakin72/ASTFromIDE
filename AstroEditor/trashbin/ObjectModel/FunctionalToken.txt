@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AstroEditor.Core.Types; // Для вашего BaseType
+using AstroEditor.Core.Types; // Для вашего CoreType
 
 namespace AstroEditor.Core.ObjectModel
 {
@@ -29,7 +29,7 @@ namespace AstroEditor.Core.ObjectModel
     public class FunctionalToken : AstNode
     {
         public override AstNodeType NodeType => AstNodeType.Functional;
-        public BaseType? ReturnType { get; set; }
+        public CoreType? ReturnType { get; set; }
 
         // Поля данных
         public string Name { get; set; } = string.Empty;          // "foo", "flag", "125"
@@ -55,7 +55,7 @@ namespace AstroEditor.Core.ObjectModel
         public override AstNodeType NodeType => AstNodeType.Operator;
 
         public string Symbol { get; set; } = string.Empty;  // "+", "=>"
-        public BaseType ReturnType => BaseType.Void;
+        public CoreType ReturnType => CoreType.Void;
 
         public override string ToTuiString() => $" {Symbol} ";
     }
@@ -66,7 +66,7 @@ namespace AstroEditor.Core.ObjectModel
         public override AstNodeType NodeType => AstNodeType.MacroCall;
 
         public string MacroName { get; set; } = string.Empty; // "sin", "ReadLaser"
-        public BaseType? ReturnType { get; set; }
+        public CoreType? ReturnType { get; set; }
 
         // Теперь список хранит жесткие AstNode. Ошибки приведения типов больше не будет!
         public List<AstNode> Arguments { get; set; } = new();
@@ -83,10 +83,10 @@ namespace AstroEditor.Core.ObjectModel
     {
         public override AstNodeType NodeType => AstNodeType.Slot;
 
-        public BaseType? ExpectedType { get; set; }
+        public CoreType? ExpectedType { get; set; }
         public string Label { get; set; } = "???";
 
-        public BaseType? ReturnType => ExpectedType;
+        public CoreType? ReturnType => ExpectedType;
         public override string ToTuiString() => $"[{Label}]";
     }
 }
