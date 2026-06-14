@@ -3,6 +3,7 @@ using System.Collections.Concurrent; // ВАЖНО: для потокобезо�
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using AstroEditor.Core.CoreTypes;
+using System.Text.Json.Serialization; // Добавить сюда
 
 namespace AstroEditor.Core.SystemTypes
 {
@@ -10,7 +11,13 @@ namespace AstroEditor.Core.SystemTypes
     {
         public string Type { get; }
     }
-
+    [JsonDerivedType(typeof(SystemNumberContainer), typeDiscriminator: "SysNum")]
+    [JsonDerivedType(typeof(SystemNumberListContainer), typeDiscriminator: "SysNumList")]
+    [JsonDerivedType(typeof(SystemStringContainer), typeDiscriminator: "SysStr")]
+    [JsonDerivedType(typeof(SystemStringListContainer), typeDiscriminator: "SysStrList")]
+    [JsonDerivedType(typeof(SystemBoolContainer), typeDiscriminator: "SysBool")]
+    [JsonDerivedType(typeof(SystemBoolListContainer), typeDiscriminator: "SysBoolList")]
+    [JsonDerivedType(typeof(SystemStructContainer), typeDiscriminator: "SysStruct")]
     public abstract class SystemContainer : BaseContainer, I_SystemDataContainer
     {
         // ГЛОБАЛЬНЫЙ РЕЕСТР: Сюда автоматически попадают все рантайм-типы
@@ -26,13 +33,18 @@ namespace AstroEditor.Core.SystemTypes
         protected SystemContainer(object data, string name, string systemType, bool isCustom = false)
                 : base(data, name, isCustom)
         {
-            Type = systemType; 
+            Type = systemType;
 
             // АВТОРЕГИСТРАЦИЯ: Если контейнер помечен как кастомный, 
             // его имя типа автоматически заносится в глобальный реестр
             if (isCustom && !string.IsNullOrWhiteSpace(systemType))
             {
-                _customTypesRegistry.TryAdd(systemType, 0);
+                if (isCustom && !string.IsNullOrWhiteSpace(systemType))
+                {
+                    // Если тип кастомный, но его нет в реестре (и мы НЕ в процессе загрузки файла), 
+                    // либо контролируйте регистрацию строго через менеджер типов (TypeManager).
+                    _customTypesRegistry.TryAdd(systemType, 0);
+                }
             }
         }
 
@@ -51,7 +63,7 @@ namespace AstroEditor.Core.SystemTypes
 
     public class SystemNumberContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 1; 
+        protected override int CoreTypeNum { get; init; } = 1;
 
         [SetsRequiredMembers]
         public SystemNumberContainer(object data, string name, string systemType = "Number", bool isCustom = false)
@@ -70,7 +82,7 @@ namespace AstroEditor.Core.SystemTypes
 
     public class SystemNumberListContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 2; 
+        protected override int CoreTypeNum { get; init; } = 2;
 
         [SetsRequiredMembers]
         public SystemNumberListContainer(object data, string name, string systemType = "NumberList", bool isCustom = false)
@@ -90,14 +102,14 @@ namespace AstroEditor.Core.SystemTypes
             }
             else
             {
-                Data = new List<object>(); 
+                Data = new List<object>();
             }
         }
     }
 
     public class SystemStringContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 3; 
+        protected override int CoreTypeNum { get; init; } = 3;
 
         [SetsRequiredMembers]
         public SystemStringContainer(object data, string name, string systemType = "String", bool isCustom = false)
@@ -109,11 +121,11 @@ namespace AstroEditor.Core.SystemTypes
 
     public class SystemStringListContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 4; 
+        protected override int CoreTypeNum { get; init; } = 4;
 
         [SetsRequiredMembers]
         public SystemStringListContainer(object data, string name, string systemType = "StringList", bool isCustom = false)
-            : base(data, name, systemType, isCustom) 
+            : base(data, name, systemType, isCustom)
         {
             if (data is List<string> sArray)
             {
@@ -132,7 +144,7 @@ namespace AstroEditor.Core.SystemTypes
 
     public class SystemBoolContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 5; 
+        protected override int CoreTypeNum { get; init; } = 5;
 
         [SetsRequiredMembers]
         public SystemBoolContainer(object data, string name, string systemType = "Boolean", bool isCustom = false)
@@ -144,11 +156,11 @@ namespace AstroEditor.Core.SystemTypes
 
     public class SystemBoolListContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 6; 
+        protected override int CoreTypeNum { get; init; } = 6;
 
         [SetsRequiredMembers]
         public SystemBoolListContainer(object data, string name, string systemType = "BooleanList", bool isCustom = false)
-            : base(data, name, systemType, isCustom) 
+            : base(data, name, systemType, isCustom)
         {
             if (data is bool[])
             {
@@ -167,11 +179,11 @@ namespace AstroEditor.Core.SystemTypes
 
     public class SystemStructContainer : SystemContainer
     {
-        protected override int CoreTypeNum { get; init; } = 7; 
+        protected override int CoreTypeNum { get; init; } = 7;
 
         [SetsRequiredMembers]
         public SystemStructContainer(object data, string name, string systemType = "Structure", bool isCustom = false)
-                    : base(null, name, systemType, isCustom) 
+                    : base(null, name, systemType, isCustom)
         {
             if (data is OrderedDictionary<string, SystemContainer> readyDict)
             {

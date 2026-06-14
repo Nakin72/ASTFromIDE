@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization; // Добавить сюда
 
 namespace AstroEditor.Core.CoreTypes
 {
@@ -11,7 +12,13 @@ namespace AstroEditor.Core.CoreTypes
         public string Name { get; init; }
         public bool IsCustom { get; init; }
     }
-
+    [JsonDerivedType(typeof(CoreNumberContainer), typeDiscriminator: "CoreNum")]
+    [JsonDerivedType(typeof(CoreNumberListContainer), typeDiscriminator: "CoreNumList")]
+    [JsonDerivedType(typeof(CoreStringContainer), typeDiscriminator: "CoreStr")]
+    [JsonDerivedType(typeof(CoreStringListContainer), typeDiscriminator: "CoreStrList")]
+    [JsonDerivedType(typeof(CoreBoolContainer), typeDiscriminator: "CoreBool")]
+    [JsonDerivedType(typeof(CoreBoolListContainer), typeDiscriminator: "CoreBoolList")]
+    [JsonDerivedType(typeof(CoreStructContainer), typeDiscriminator: "CoreStruct")]
     public abstract class BaseContainer : I_DataContainer
     {
         // Единый массив на всё приложение. Строки создаются в памяти ровно ОДИН раз.
@@ -85,7 +92,7 @@ namespace AstroEditor.Core.CoreTypes
             }
             else
             {
-                Data = new List<object>(); 
+                Data = new List<object>();
             }
         }
     }
