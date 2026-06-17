@@ -254,29 +254,6 @@ namespace AstroEditor.Core.v3.Variables
             // Удаляем старую таблицу типа из пула
             pool.Remove(oldType);
         }
-        // Рекурсивный поиск: используется ли тип внутри контейнера (для проверок вложенности)
-        // private bool IsTypeUsedInContainer(CoreDataContainer container, CoreDataType targetType)
-        // {
-        //     if (container.DataType == targetType) return true;
-
-        //     if (container.Value is CoreStruct cStruct)
-        //     {
-        //         // Мы не можем легко прочитать приватный словарь _fields структуры, 
-        //         // поэтому для полноценной проверки в класс CoreStruct нужно будет добавить метод-итератор по контейнерам полей.
-        //         // Заглушка для демонстрации идеи:
-        //         // foreach(var fieldContainer in cStruct.GetContainers()) if(IsTypeUsedInContainer(fieldContainer, targetType)) return true;
-        //     }
-        //     else if (container.Value is CoreDataList cList)
-        //     {
-        //         foreach (var itemContainer in cList)
-        //         {
-        //             if (IsTypeUsedInContainer(itemContainer, targetType)) return true;
-        //         }
-        //     }
-
-        //     return false;
-        // }
-        // РЕКУРСИВНЫЙ ПОИСК: Проверяет, используется ли тип где-либо внутри контейнера
         public bool IsTypeUsedInContainer(CoreDataContainer container, CoreDataType targetType)
         {
             // 1. Прямая проверка типа самого контейнера

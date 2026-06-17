@@ -1,0 +1,306 @@
+
+    {
+        "name": "GlobalVariables",
+        "isGlobal": true,
+        "tables": {
+            "int": {
+                "typeId": "int",
+                "variables": [
+                    {
+                        "name": "Counter",
+                        "typeId": "int",
+                        "value": 0,
+                        "comment": null,
+                        "constraints": null
+                    },
+                    {
+                        "name": "MaxAttempts",
+                        "typeId": "int",
+                        "value": 10,
+                        "comment": null,
+                        "constraints": null
+                    }
+                ]
+            },
+            "2607a499-dded-424b-a0ed-5315f3913980": {
+                "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                "variables": [
+                    {
+                        "name": "Speed",
+                        "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                        "value": 150.5,
+                        "comment": null,
+                        "constraints": null
+                    },
+                    {
+                        "name": "Acceleration",
+                        "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                        "value": 50,
+                        "comment": null,
+                        "constraints": null
+                    }
+                ]
+            },
+            "5afb5aad-3938-41ca-a544-8ae8ad32000f": {
+                "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                "variables": [
+                    {
+                        "name": "Home",
+                        "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                        "value": {
+                            "X": 0,
+                            "Y": 0,
+                            "Z": 0,
+                            "A": 0,
+                            "B": 0,
+                            "C": 0
+                        },
+                        "comment": null,
+                        "constraints": null
+                    },
+                    {
+                        "name": "Target",
+                        "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                        "value": {
+                            "X": 100,
+                            "Y": 200,
+                            "Z": 50,
+                            "A": 45,
+                            "B": 0,
+                            "C": 0
+                        },
+                        "comment": null,
+                        "constraints": null
+                    }
+                ]
+            },
+            "bool": {
+                "typeId": "bool",
+                "variables": [
+                    {
+                        "name": "IsRunning",
+                        "typeId": "bool",
+                        "value": false,
+                        "comment": null,
+                        "constraints": null
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "name": "LocalVariables_MoveToPoint",
+        "isGlobal": false,
+        "tables": {
+            "int": {
+                "typeId": "int",
+                "variables": [
+                    {
+                        "name": "LoopCounter",
+                        "typeId": "int",
+                        "value": 0,
+                        "comment": null,
+                        "constraints": null
+                    }
+                ]
+            },
+            "5afb5aad-3938-41ca-a544-8ae8ad32000f": {
+                "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                "variables": [
+                    {
+                        "name": "CurrentPos",
+                        "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                        "value": {
+                            "X": 0,
+                            "Y": 0,
+                            "Z": 0,
+                            "A": 0,
+                            "B": 0,
+                            "C": 0
+                        },
+                        "comment": null,
+                        "constraints": null
+                    }
+                ]
+            }
+        }
+    }
+
+=== Восстановленные глобальные таблицы ===
+Таблица типа: int
+  Counter = 0 (тип: INT)
+  MaxAttempts = 10 (тип: INT)
+Таблица типа: 2607a499-dded-424b-a0ed-5315f3913980
+  Speed = 150.5 (тип: REAL)
+  Acceleration = 50 (тип: REAL)
+Таблица типа: 5afb5aad-3938-41ca-a544-8ae8ad32000f
+  Home = {
+        "X": 0,
+        "Y": 0,
+        "Z": 0,
+        "A": 0,
+        "B": 0,
+        "C": 0
+    } (тип: POSITION)
+  Target = {
+        "X": 100,
+        "Y": 200,
+        "Z": 50,
+        "A": 45,
+        "B": 0,
+        "C": 0
+    } (тип: POSITION)
+Таблица типа: bool
+  IsRunning = False (тип: BOOL)
+
+Найдена переменная Speed: 150.5 (тип: REAL)
+
+=== Структура программы (JSON) ===
+{
+        "Name": "MoveToPoint",
+        "GlobalTableSet": {
+            "name": "GlobalVariables",
+            "isGlobal": true,
+            "tables": {
+                "int": {
+                    "typeId": "int",
+                    "variables": [
+                        {
+                            "name": "Counter",
+                            "typeId": "int",
+                            "value": 0,
+                            "comment": null,
+                            "constraints": null
+                        },
+                        {
+                            "name": "MaxAttempts",
+                            "typeId": "int",
+                            "value": 10,
+                            "comment": null,
+                            "constraints": null
+                        }
+                    ]
+                },
+                "2607a499-dded-424b-a0ed-5315f3913980": {
+                    "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                    "variables": [
+                        {
+                            "name": "Speed",
+                            "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                            "value": 150.5,
+                            "comment": null,
+                            "constraints": null
+                        },
+                        {
+                            "name": "Acceleration",
+                            "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                            "value": 50,
+                            "comment": null,
+                            "constraints": null
+                        }
+                    ]
+                },
+                "5afb5aad-3938-41ca-a544-8ae8ad32000f": {
+                    "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                    "variables": [
+                        {
+                            "name": "Home",
+                            "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                            "value": {
+                                "X": 0,
+                                "Y": 0,
+                                "Z": 0,
+                                "A": 0,
+                                "B": 0,
+                                "C": 0
+                            },
+                            "comment": null,
+                            "constraints": null
+                        },
+                        {
+                            "name": "Target",
+                            "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                            "value": {
+                                "X": 100,
+                                "Y": 200,
+                                "Z": 50,
+                                "A": 45,
+                                "B": 0,
+                                "C": 0
+                            },
+                            "comment": null,
+                            "constraints": null
+                        }
+                    ]
+                },
+                "bool": {
+                    "typeId": "bool",
+                    "variables": [
+                        {
+                            "name": "IsRunning",
+                            "typeId": "bool",
+                            "value": false,
+                            "comment": null,
+                            "constraints": null
+                        }
+                    ]
+                }
+            }
+        },
+        "LocalTableSet": {
+            "name": "LocalVariables_MoveToPoint",
+            "isGlobal": false,
+            "tables": {
+                "int": {
+                    "typeId": "int",
+                    "variables": [
+                        {
+                            "name": "LoopCounter",
+                            "typeId": "int",
+                            "value": 0,
+                            "comment": null,
+                            "constraints": null
+                        }
+                    ]
+                },
+                "5afb5aad-3938-41ca-a544-8ae8ad32000f": {
+                    "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                    "variables": [
+                        {
+                            "name": "CurrentPos",
+                            "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                            "value": {
+                                "X": 0,
+                                "Y": 0,
+                                "Z": 0,
+                                "A": 0,
+                                "B": 0,
+                                "C": 0
+                            },
+                            "comment": null,
+                            "constraints": null
+                        }
+                    ]
+                }
+            }
+        },
+        "Arguments": [
+            {
+                "name": "TargetPos",
+                "typeId": "5afb5aad-3938-41ca-a544-8ae8ad32000f",
+                "value": null,
+                "comment": "\u0426\u0435\u043B\u0435\u0432\u0430\u044F \u043F\u043E\u0437\u0438\u0446\u0438\u044F",
+                "constraints": null
+            },
+            {
+                "name": "MoveSpeed",
+                "typeId": "2607a499-dded-424b-a0ed-5315f3913980",
+                "value": null,
+                "comment": "\u0421\u043A\u043E\u0440\u043E\u0441\u0442\u044C \u043F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D\u0438\u044F",
+                "constraints": null
+            }
+        ],
+        "ReturnType": "bool",
+        "Lines": []
+    }
+}

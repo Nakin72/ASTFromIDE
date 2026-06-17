@@ -26,6 +26,68 @@ namespace AstroEditor.Core.v3.Types
     // Объект созданного типа данных
 
 
+    // Универсальный контейнер переменной
+    public class CoreDataContainer
+    {
+        private object? _value;
+        public CoreDataType DataType { get; init; }
+
+        public object? Value
+        {
+            get => _value;
+            set
+            {
+                ValidateValue(value);
+                _value = value;
+            }
+        }
+
+        public CoreDataContainer(CoreDataType dataType, object? value = null)
+        {
+            DataType = dataType;
+
+            // Авто-инициализация пустых объектов для структур и списков, если передан null
+            if (value == null)
+            {
+                if (DataType.Family == DataTypeFamily.Structure) value = new CoreStruct();
+                else if (DataType.Family == DataTypeFamily.Collection) value = new CoreDataList(DataType.ElementType ?? CoreDataType.Any);
+            }
+
+            Value = value;
+        }
+
+        private void ValidateValue(object? value)
+        {
+            if (value == null)
+            {
+                if (DataType != CoreDataType.Any && DataType.Family != DataTypeFamily.Text)
+                    throw new ArgumentNullException(nameof(value), $"Тип {DataType.Name} не поддерживает null.");
+                return;
+            }
+
+            if (DataType == CoreDataType.Any) return;
+
+            // Проверка базового системного типа C#
+            if (DataType.TargetSystemType != null && value.GetType() != DataType.TargetSystemType)
+            {
+                throw new InvalidCastException($"Ожидается системный класс '{DataType.TargetSystemType.Name}', передан '{value.GetType().Name}'.");
+            }
+
+            // [ИСПРАВЛЕНО]: Проверка типа элементов для списков
+            if (DataType.Family == DataTypeFamily.Collection && value is CoreDataList list)
+            {
+                // Если у контейнера базовый тип "List", его ElementType равен null. 
+                // В таком случае мы трактуем его как Any (разрешено всё).
+                var expectedElement = DataType.ElementType ?? CoreDataType.Any;
+
+                // Если ожидается конкретный тип, проверяем на строгое соответствие
+                if (expectedElement != CoreDataType.Any && list.AllowedType != expectedElement)
+                {
+                    throw new ArgumentException($"Тип списка '{DataType.Name}' ожидает элементы типа '{expectedElement.Name}', но передан список элементов '{list.AllowedType.Name}'.");
+                }
+            }
+        }
+    }
 
     public class CoreDataType
     {
@@ -153,69 +215,7 @@ namespace AstroEditor.Core.v3.Types
         }
     }
 
-    // Универсальный контейнер переменной
-    public class CoreDataContainer
-    {
-        private object? _value;
-        public CoreDataType DataType { get; init; }
-
-        public object? Value
-        {
-            get => _value;
-            set
-            {
-                ValidateValue(value);
-                _value = value;
-            }
-        }
-
-        public CoreDataContainer(CoreDataType dataType, object? value = null)
-        {
-            DataType = dataType;
-
-            // Авто-инициализация пустых объектов для структур и списков, если передан null
-            if (value == null)
-            {
-                if (DataType.Family == DataTypeFamily.Structure) value = new CoreStruct();
-                else if (DataType.Family == DataTypeFamily.Collection) value = new CoreDataList(DataType.ElementType ?? CoreDataType.Any);
-            }
-
-            Value = value;
-        }
-
-        private void ValidateValue(object? value)
-        {
-            if (value == null)
-            {
-                if (DataType != CoreDataType.Any && DataType.Family != DataTypeFamily.Text)
-                    throw new ArgumentNullException(nameof(value), $"Тип {DataType.Name} не поддерживает null.");
-                return;
-            }
-
-            if (DataType == CoreDataType.Any) return;
-
-            // Проверка базового системного типа C#
-            if (DataType.TargetSystemType != null && value.GetType() != DataType.TargetSystemType)
-            {
-                throw new InvalidCastException($"Ожидается системный класс '{DataType.TargetSystemType.Name}', передан '{value.GetType().Name}'.");
-            }
-
-            // [ИСПРАВЛЕНО]: Проверка типа элементов для списков
-            if (DataType.Family == DataTypeFamily.Collection && value is CoreDataList list)
-            {
-                // Если у контейнера базовый тип "List", его ElementType равен null. 
-                // В таком случае мы трактуем его как Any (разрешено всё).
-                var expectedElement = DataType.ElementType ?? CoreDataType.Any;
-
-                // Если ожидается конкретный тип, проверяем на строгое соответствие
-                if (expectedElement != CoreDataType.Any && list.AllowedType != expectedElement)
-                {
-                    throw new ArgumentException($"Тип списка '{DataType.Name}' ожидает элементы типа '{expectedElement.Name}', но передан список элементов '{list.AllowedType.Name}'.");
-                }
-            }
-        }
-    }
-
+ 
     // Список без дженериков
     public class CoreDataList : IEnumerable<CoreDataContainer>
     {
