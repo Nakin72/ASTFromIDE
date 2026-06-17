@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using AstroEditor.Core.SystemTypes;
+using AstroEditor.Core.v2.SystemTypes;
 using System.Text.Json.Serialization; // Добавить сюда
 
-namespace AstroEditor.Core.AST
+namespace AstroEditor.Core.v2.AST
 {
     // Интерфейс для всего, что может быть вычислено и возвращает SystemContainer
     [JsonDerivedType(typeof(LiteralField), typeDiscriminator: "Literal")]

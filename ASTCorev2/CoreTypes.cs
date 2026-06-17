@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization; // Добавить сюда
 
-namespace AstroEditor.Core.CoreTypes
+namespace AstroEditor.Core.v2.CoreTypes
 {
     public interface I_DataContainer
     {

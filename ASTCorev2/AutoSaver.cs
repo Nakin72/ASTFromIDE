@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace AstroEditor.Core.IO
+namespace AstroEditor.Core.v2.IO
 {
     public static class ProjectSaveManager
     {

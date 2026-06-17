@@ -2,10 +2,10 @@ using System;
 using System.Collections.Concurrent; // ВАЖНО: для потокобезопасного списка HashSet
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using AstroEditor.Core.CoreTypes;
+using AstroEditor.Core.v2.CoreTypes;
 using System.Text.Json.Serialization; // Добавить сюда
 
-namespace AstroEditor.Core.SystemTypes
+namespace AstroEditor.Core.v2.SystemTypes
 {
     public interface I_SystemDataContainer : I_DataContainer
     {

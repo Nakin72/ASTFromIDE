@@ -2,6 +2,6 @@ using System.Dynamic;
 //using Number = decimal;
 
 
-namespace AstroEditor.Core.Types
+namespace AstroEditor.Core.v2.Types
 {
 }
