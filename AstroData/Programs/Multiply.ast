@@ -1,0 +1,93 @@
+{
+  "name": "Multiply",
+  "author": "",
+  "description": "",
+  "version": "1.0",
+  "created": "2026-06-19T22:18:02.0832026Z",
+  "modified": "2026-06-19T22:18:02.0832026Z",
+  "returnTypeId": "int",
+  "isMenuFunction": false,
+  "isBackground": false,
+  "taskGroup": 1,
+  "arguments": [
+    {
+      "name": "A",
+      "typeId": "int",
+      "direction": "in",
+      "defaultValue": 0
+    },
+    {
+      "name": "B",
+      "typeId": "int",
+      "direction": "in",
+      "defaultValue": 0
+    }
+  ],
+  "localTables": {
+    "name": "LocalVariables",
+    "isGlobal": false,
+    "tables": {
+      "int": {
+        "typeId": "int",
+        "variables": [
+          {
+            "name": "Result",
+            "typeId": "int",
+            "value": 0,
+            "comment": null,
+            "constraints": null
+          }
+        ]
+      }
+    }
+  },
+  "lines": [
+    {
+      "lineNumber": 1,
+      "comment": null,
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Result",
+          "typeId": "int"
+        },
+        "expression": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "A * B"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 2,
+      "comment": null,
+      "formId": "core.return",
+      "fields": {
+        "value": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Result"
+        }
+      },
+      "breakpoint": false
+    }
+  ],
+  "labels": {},
+  "permissions": {
+    "readRoles": [
+      "operator"
+    ],
+    "writeRoles": [
+      "programmer"
+    ],
+    "executeRoles": [
+      "operator",
+      "programmer"
+    ]
+  },
+  "maxCycles": 10
+}

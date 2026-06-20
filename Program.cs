@@ -1,368 +1,500 @@
-﻿using AstroEditor.Core.v4.Common;
-using AstroEditor.Core.v4.Types;
-using AstroEditor.Core.v4.Variables;
-using AstroEditor.Core.v4.Tables;
-using AstroEditor.Core.v4.Programs;
-using AstroEditor.Core.v4.Forms;
-using AstroEditor.Core.v4.Expressions;
-using AstroEditor.Core.v4.Interpreter;
-using AstroEditor.Core.v4.Serialization;
+// AstroEditor � ������ ������������ ����� �����������
+// ����: Data > Binding > Execution
+// ��� 30+ ����������, ������, ����������, �������, ������������, ���������������, ������������
 
-// 1. Создаём реестры
-var typeRegistry = new DataTypeRegistry();
-var formRegistry = new FormRegistry();
+using AstroEditor.Core.Common;
+using AstroEditor.Core.Types;
+using AstroEditor.Core.Variables;
+using AstroEditor.Core.Programs;
+using AstroEditor.Core.Forms;
+using AstroEditor.Core.Interpreter;
+using AstroEditor.Core.Serialization;
+using AstroEditor.Core.Data;
+using AstroEditor.Core.Binding;
+using AstroEditor.Core.Execution;
+using AstroEditor.Core.Alarms;
+using AstroEditor.Core.Common;
 
-// 2. Регистрируем примитивы
-var intType = PrimitiveDataType.Int(); intType.Id = "int"; typeRegistry.RegisterType(intType);
-var doubleType = PrimitiveDataType.Double(); doubleType.Id = "double"; typeRegistry.RegisterType(doubleType);
-var boolType = PrimitiveDataType.Bool(); boolType.Id = "bool"; typeRegistry.RegisterType(boolType);
-var stringType = PrimitiveDataType.String(); stringType.Id = "string"; typeRegistry.RegisterType(stringType);
-var realType = new AliasDataType { Name = "REAL", Category = DataTypeCategory.System, BaseTypeId = "double" };
-typeRegistry.RegisterType(realType);
+Console.WriteLine("�======================================================�");
+Console.WriteLine("�     ASTRO EDITOR � ������ ������������             �");
+Console.WriteLine("L======================================================-\n");
 
-// Структура POSITION
-var posType = new StructDataType
+// ===================================================================
+// 1. ������������� �������
+// ===================================================================
+Console.WriteLine("=== 1. ������������� ������� ===");
+var project = new ProjectManager();
+var baseFolder = Path.Combine(Environment.CurrentDirectory, "AstroData");
+project.InitializeNew(baseFolder);
+
+Console.WriteLine($"  ������ �����: {project.TypeRegistry.AllTypes.Count} �����");
+Console.WriteLine($"  ������ ����:  {project.FormRegistry.AllForms.Count} ����");
+Console.WriteLine();
+
+// ===================================================================
+// 2. ���� ������ (���������, enum, struct, alias)
+// ===================================================================
+Console.WriteLine("=== 2. ���� ������ ===");
+
+// 2a. ��������� � ��������
+Console.WriteLine("  --- ��������� ---");
+foreach (var t in project.TypeRegistry.AllTypes.OfType<PrimitiveDataType>())
 {
-    Name = "POSITION",
-    Category = DataTypeCategory.System,
+    var c = t.BuiltinConstraints;
+    Console.WriteLine($"    {t.Name,-8} ({t.Id,-6}) > [{c?.Min?.ToString() ?? "�"}, {c?.Max?.ToString() ?? "�"}]");
+}
+
+// 2b. ���������������� Enum
+Console.WriteLine("  --- ���������������� Enum ---");
+var colorType = new EnumDataType
+{
+    Id = "color",
+    Name = "COLOR",
+    Category = DataTypeCategory.User,
+    Values = new Dictionary<string, long> { ["RED"] = 0, ["GREEN"] = 1, ["BLUE"] = 2, ["YELLOW"] = 3 }
+};
+project.TypeRegistry.RegisterType(colorType);
+project.TypeRegistry.ResolveReferences();
+Console.WriteLine($"    ���: {colorType.Name} ({colorType.Values.Count} ��������)");
+
+// 2c. ���������������� Struct
+Console.WriteLine("  --- ���������������� Struct ---");
+var pointType = new StructDataType
+{
+    Id = "point",
+    Name = "POINT",
+    Category = DataTypeCategory.User,
     Fields = new List<StructField>
     {
-        new StructField { Name = "X", TypeId = "double" },
-        new StructField { Name = "Y", TypeId = "double" },
-        new StructField { Name = "Z", TypeId = "double" }
+        new() { Name = "X", TypeId = "double" },
+        new() { Name = "Y", TypeId = "double" },
+        new() { Name = "Z", TypeId = "double" }
     }
 };
-typeRegistry.RegisterType(posType);
-typeRegistry.ResolveReferences();
+project.TypeRegistry.RegisterType(pointType);
+project.TypeRegistry.ResolveReferences();
+Console.WriteLine($"    ���: {pointType.Name} (�����: {pointType.Fields.Count})");
 
-// 3. Регистрируем все формы (включая новые)
-formRegistry.RegisterForm(BuiltinForms.CreateAssignmentForm());
-formRegistry.RegisterForm(BuiltinForms.CreateWhileForm());
-formRegistry.RegisterForm(BuiltinForms.CreateCallForm());
-formRegistry.RegisterForm(BuiltinForms.CreateLabelForm());
-formRegistry.RegisterForm(BuiltinForms.CreateJumpLblForm());
-formRegistry.RegisterForm(BuiltinForms.CreateJumpIfForm());
-formRegistry.RegisterForm(BuiltinForms.CreateReturnForm());
-formRegistry.RegisterForm(BuiltinForms.CreateBreakForm());
-formRegistry.RegisterForm(BuiltinForms.CreateContinueForm());
-formRegistry.RegisterForm(BuiltinForms.CreateIfForm());
-formRegistry.RegisterForm(BuiltinForms.CreateElseForm());
-formRegistry.RegisterForm(BuiltinForms.CreateEndIfForm());
-formRegistry.RegisterForm(BuiltinForms.CreateSwitchForm());
-formRegistry.RegisterForm(BuiltinForms.CreateCaseForm());
-formRegistry.RegisterForm(BuiltinForms.CreateDefaultForm());
-formRegistry.RegisterForm(BuiltinForms.CreateEndSwitchForm());
-formRegistry.RegisterForm(BuiltinForms.CreateForForm());
-formRegistry.RegisterForm(BuiltinForms.CreateEndForForm());
+// 2d. Alias
+var speedType = new AliasDataType
+{
+    Id = "speed", Name = "SPEED", Category = DataTypeCategory.User, BaseTypeId = "int"
+};
+project.TypeRegistry.RegisterType(speedType);
+project.TypeRegistry.ResolveReferences();
+Console.WriteLine($"    Alias: {speedType.Name} > base={speedType.BaseTypeId}\n");
 
-// 4. Глобальные таблицы
-var globalSet = new VariableTableSet { Name = "GlobalVariables", IsGlobal = true };
-globalSet.GetOrCreateTable(intType).AddVariable(new Variable("GlobalCounter", intType, 0));
-globalSet.GetOrCreateTable(doubleType).AddVariable(new Variable("Pi", doubleType, 3.14159));
-globalSet.GetOrCreateTable(boolType).AddVariable(new Variable("Flag", boolType, false));
-globalSet.GetOrCreateTable(stringType).AddVariable(new Variable("Message", stringType, "Hello"));
+// ===================================================================
+// 3. ���������� � ������������
+// ===================================================================
+Console.WriteLine("=== 3. ���������� � ������������ ===");
 
-// 5. Создаём программу с тестовыми конструкциями
+var intType = project.TypeRegistry.GetTypeById("int")!;
+var realType = project.TypeRegistry.GetTypeById("real")!;
+var boolType = project.TypeRegistry.GetTypeById("bool")!;
+var stringType = project.TypeRegistry.GetTypeById("string")!;
+var doubleType = project.TypeRegistry.GetTypeById("double")!;
+
+// ���������� ���������� ������ �����
+project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("GlobalCounter", intType, 0));
+project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("Sensor1", intType, 0));
+project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("Sensor2", intType, 0));
+project.GlobalTables.GetOrCreateTable(realType).AddVariable(new Variable("Pi", realType, 3.14159));
+project.GlobalTables.GetOrCreateTable(stringType).AddVariable(new Variable("Status", stringType, "Idle"));
+project.GlobalTables.GetOrCreateTable(colorType).AddVariable(new Variable("SelectedColor", colorType, 0L));
+
+// �������� <=> (������������ �������������)
+var binding = BindingManager.Bind("MyAlias", "GlobalCounter", BindingDirection.Bidirectional);
+Console.WriteLine("  ��������: MyAlias <=> GlobalCounter (Bidirectional)");
+// ���������: alias ������ �� target
+Console.WriteLine($"    GlobalCounter = {GetGlobalVar(project, "GlobalCounter")}, MyAlias ������� = {binding.IsActive}");
+
+// �������� OneWayToTarget: Sensor1 ����� � GlobalCounter
+var binding2 = BindingManager.Bind("Sensor1", "GlobalCounter", BindingDirection.OneWayToTarget);
+Console.WriteLine($"  ��������: Sensor1 => GlobalCounter (OneWayToTarget)");
+Console.WriteLine();
+
+// ��������������� �������
+static object? GetGlobalVar(ProjectManager pm, string name)
+{
+    foreach (var t in pm.GlobalTables.Tables.Values)
+        foreach (var v in t.Variables)
+            if (v.Name == name) return v.Value;
+    return null;
+}
+
+// ===================================================================
+// 4. ��������� � ������ ����� ����������
+// ===================================================================
+Console.WriteLine("=== 4. ��������� � ������ ����� ���������� ===");
+
 var program = new AstroProgram
 {
-    Name = "TestProgram",
-    Author = "Tester",
-    Description = "Тестовая программа, проверяющая все конструкции",
-    Version = "1.0",
-    ReturnTypeId = "int",
-    IsMenuFunction = false,
-    IsBackground = false,
-    TaskGroup = 1,
-    MaxCycles = 1000,
-    Permissions = new ProgramPermissions
-    {
-        ReadRoles = new List<string> { "operator" },
-        WriteRoles = new List<string> { "programmer" },
-        ExecuteRoles = new List<string> { "operator", "programmer" }
-    }
+    Name = "MainProgram", Author = "Demo", Description = "������ ������������",
+    Version = "4.0", ReturnTypeId = "int", IsBackground = false, MaxCycles = 1000
 };
 
-// Аргументы
+// ��������� (������� enum)
 program.Arguments.Add(new Argument { Name = "StartValue", TypeId = "int", Direction = ArgumentDirection.In, DefaultValue = 0 });
-program.Arguments.Add(new Argument { Name = "Multiplier", TypeId = "real", Direction = ArgumentDirection.In, DefaultValue = 2.0 });
+program.Arguments.Add(new Argument { Name = "ColorArg", TypeId = "color", Direction = ArgumentDirection.In, DefaultValue = 0L });
 
-// Локальные переменные
-program.AddLocalVariable(new Variable("Counter", intType, 0), typeRegistry);
-program.AddLocalVariable(new Variable("Sum", intType, 0), typeRegistry);
-program.AddLocalVariable(new Variable("Temp", realType, 0.0), typeRegistry);
-program.AddLocalVariable(new Variable("IsEven", boolType, false), typeRegistry);
+// ��������� ����������
+program.AddLocalVariable(new Variable("Counter", intType, 0), project.TypeRegistry);
+program.AddLocalVariable(new Variable("Sum", intType, 0), project.TypeRegistry);
+program.AddLocalVariable(new Variable("Temp", realType, 0.0), project.TypeRegistry);
+program.AddLocalVariable(new Variable("IsEven", boolType, false), project.TypeRegistry);
+program.AddLocalVariable(new Variable("X", doubleType, 0.0), project.TypeRegistry);
 
-// Формируем инструкции
 int line = 1;
+void I(string fId, Dictionary<string, FieldValue>? f = null, string? c = null) =>
+    program.Lines.Add(new Instruction(line++, fId) { Fields = f ?? new(), Comment = c ?? "" });
 
-// 1. Присваивание: Counter = StartValue
-program.Lines.Add(new Instruction(line++, "core.assign")
+// --- Assign ---
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"), ["expression"] = new ExpressionFieldValue("StartValue") }, "������� = ��������");
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ConstantFieldValue(0) }, "Sum = 0");
+
+// --- LBL + JumpIf + JumpLbl (������ ����) ---
+I("core.lbl", new() { ["labelName"] = new ConstantFieldValue("START") });
+I("core.jumpif", new() { ["condition"] = new ExpressionFieldValue("Counter >= 6"), ["labelName"] = new ConstantFieldValue("END") }, "����� ��� >= 6");
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ExpressionFieldValue("Sum + Counter") });
+
+// --- IF/ELSE/ENDIF ---
+I("core.if", new() { ["condition"] = new ExpressionFieldValue("(Counter % 2) == 0") });
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"), ["expression"] = new ConstantFieldValue(true) }, "׸�");
+I("core.else");
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"), ["expression"] = new ConstantFieldValue(false) }, "�����");
+I("core.endif");
+
+// --- SWITCH/CASE/DEFAULT/ENDSWITCH ---
+I("core.switch", new() { ["expression"] = new ExpressionFieldValue("Counter") });
+I("core.case", new() { ["value"] = new ConstantFieldValue(2) });
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"), ["expression"] = new ConstantFieldValue(100.0) }, "Case 2");
+I("core.default");
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"), ["expression"] = new ConstantFieldValue(0.0) }, "Default");
+I("core.endswitch");
+
+// --- FOR/ENDFOR (��������� ����) ---
+I("core.for", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"), ["start"] = new ExpressionFieldValue("Counter + 1"), ["end"] = new ExpressionFieldValue("Counter + 3"), ["step"] = new ExpressionFieldValue("1") }, "FOR �����.");
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ExpressionFieldValue("Sum + Counter") });
+
+// --- BREAK (��� ���������� Sum > 50) ---
+I("core.if", new() { ["condition"] = new ExpressionFieldValue("Sum > 50") });
+I("core.break", new() {}, "Break ��� Sum>50");
+I("core.endif");
+
+I("core.endfor");
+
+// --- ��������� Counter ---
+I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"), ["expression"] = new ExpressionFieldValue("Counter + 1") });
+
+// --- CONTINUE (���������� ������ ��������) ---
+I("core.if", new() { ["condition"] = new ExpressionFieldValue("(Counter % 2) == 0") });
+I("core.continue", new() {}, "������� ������");
+I("core.endif");
+
+I("core.jumplbl", new() { ["labelName"] = new ConstantFieldValue("START") });
+
+// --- END + Return ---
+I("core.lbl", new() { ["labelName"] = new ConstantFieldValue("END") });
+I("core.return", new() { ["value"] = new ExpressionFieldValue("Sum") });
+
+program.Labels["START"] = 3; program.Labels["END"] = 28;
+project.AddProgram(program);
+Console.WriteLine($"  '{program.Name}': {program.Lines.Count} ����������\n");
+
+// ===================================================================
+// 5. ������������ (CALL)
+// ===================================================================
+Console.WriteLine("=== 5. ������������ (core.call) ===");
+
+var subProg = new AstroProgram
 {
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"),
-        ["expression"] = new ExpressionFieldValue("StartValue")
-    },
-    Comment = "Инициализация счётчика"
+    Name = "Multiply", ReturnTypeId = "int", IsBackground = false, MaxCycles = 10
+};
+subProg.Arguments.Add(new Argument { Name = "A", TypeId = "int", Direction = ArgumentDirection.In, DefaultValue = 0 });
+subProg.Arguments.Add(new Argument { Name = "B", TypeId = "int", Direction = ArgumentDirection.In, DefaultValue = 0 });
+subProg.AddLocalVariable(new Variable("Result", intType, 0), project.TypeRegistry);
+subProg.Lines.Add(new Instruction(1, "core.assign")
+{
+    Fields = new() { ["variable"] = new VariableFieldValue("LocalVariables", "Result", "int"), ["expression"] = new ExpressionFieldValue("A * B") }
 });
-
-// 2. Присваивание: Sum = 0
-program.Lines.Add(new Instruction(line++, "core.assign")
+subProg.Lines.Add(new Instruction(2, "core.return")
 {
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
-        ["expression"] = new ConstantFieldValue(0)
-    },
-    Comment = "Обнуление суммы"
+    Fields = new() { ["value"] = new ExpressionFieldValue("Result") }
 });
+project.AddProgram(subProg);
+Console.WriteLine($"  '{subProg.Name}': {subProg.Lines.Count} ����������\n");
 
-// 3. Метка START
-program.Lines.Add(new Instruction(line++, "core.lbl")
+// ===================================================================
+// 6. ������ (������ ������������)
+// ===================================================================
+Console.WriteLine("=== 6. ������ (������ ������������) ===");
+
+var alarms = project.Alarms;
+alarms.CreateUserAlarm("SAFETY_DOOR", "Safety door is open on line {0}", AlarmSeverity.Fatal);
+alarms.CreateUserAlarm("TOOL_WEAR", "Tool wear {0}% exceeded limit", AlarmSeverity.Warning);
+alarms.CreateUserAlarm("PART_OK", "Part quality check passed", AlarmSeverity.Info);
+
+Console.WriteLine($"  �����������: {alarms.Definitions.Count}");
+
+// Raise � �����������
+alarms.RaiseFromProgram(1001, "MainProgram", 15, "Main");
+var def1001 = alarms.GetDefinition(1001);
+Console.WriteLine($"  Active: {alarms.ActiveAlarms.Count}, Msg: \"{def1001?.FormatMessage(new object[] { "Main" })}\"");
+
+// Raise � ���������� (Tool Wear 95%)
+alarms.Raise(1002, 95.0);
+var def1002 = alarms.GetDefinition(1002);
+Console.WriteLine($"  #{1002}: \"{def1002?.FormatMessage(new object[] { 95.0 })}\"");
+
+// Ack + Clear
+alarms.Acknowledge(1002);
+Console.WriteLine($"  ToolWear ����� Ack: {alarms.ActiveAlarms[1002].State}");
+alarms.Clear(1002);
+Console.WriteLine($"  ����� Clear: active={alarms.ActiveAlarms.Count}");
+
+// ��������� > ���������� �����������
+Console.Write("  ��������� SAFETY_DOOR: ");
+try { alarms.Raise(1001, "Main"); }
+catch (AlarmFatalException ex) { Console.WriteLine($"����������� > {ex.Message}"); }
+
+// ClearAll
+alarms.Raise(1002, 50.0);
+alarms.ClearAll();
+Console.WriteLine($"  ����� ClearAll: active={alarms.ActiveAlarms.Count}");
+Console.WriteLine();
+
+// ===================================================================
+// 7. ���������� (OnChange, Background, OnAlarm)
+// ===================================================================
+Console.WriteLine("=== 7. ���������� (������ ������������) ===");
+
+var interrupts = project.Interrupts;
+
+// OnAlarm > Deferred
+var intOnAlarm = new InterruptDefinition
 {
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["labelName"] = new ConstantFieldValue("START")
-    }
-});
+    Id = "int-alarm", Name = "OnSafetyAlarm", TriggerType = InterruptTrigger.OnAlarm,
+    AlarmCode = 1001, ExecutionMode = InterruptExecutionMode.Deferred, IsEnabled = true
+};
+interrupts.Register(intOnAlarm);
 
-// 4. Проверка условия выхода: IF Counter >= 10 THEN GOTO END
-program.Lines.Add(new Instruction(line++, "core.jumpif")
+// OnValue > Background
+var intBackground = new InterruptDefinition
 {
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["condition"] = new ExpressionFieldValue("Counter >= 10"),
-        ["labelName"] = new ConstantFieldValue("END")
-    },
-    Comment = "Выход при достижении 10"
-});
+    Id = "int-bg", Name = "BgSensorCheck", TriggerType = InterruptTrigger.OnValue,
+    Expression = "Sensor1 > 5", ExecutionMode = InterruptExecutionMode.Background,
+    IsEnabled = true, HandlerProgramName = "Multiply"
+};
+interrupts.Register(intBackground);
 
-// 5. Тело цикла: Sum = Sum + Counter
-program.Lines.Add(new Instruction(line++, "core.assign")
+// OnRisingEdge > Inline
+var intRising = new InterruptDefinition
 {
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
-        ["expression"] = new ExpressionFieldValue("Sum + Counter")
-    }
-});
+    Id = "int-rise", Name = "OnRisingSensor2", TriggerType = InterruptTrigger.OnRisingEdge,
+    VariableName = "Sensor2", ExecutionMode = InterruptExecutionMode.Inline, IsEnabled = true
+};
+interrupts.Register(intRising);
 
-// 6. IF (Counter % 2 == 0) THEN Set IsEven = true ELSE false
-program.Lines.Add(new Instruction(line++, "core.if")
+Console.WriteLine($"  ����������: {interrupts.Definitions.Count}");
+foreach (var d in interrupts.Definitions.Values)
+    Console.WriteLine($"    {d.Name,-20} | {d.TriggerType,-12} {d.ExecutionMode,-12} Enabled={d.IsEnabled}");
+
+// Fire + Dequeue Deferred
+interrupts.Fire(intOnAlarm);
+Console.WriteLine($"  HasDeferred: {interrupts.HasDeferred}");
+var dq = interrupts.DequeueDeferred();
+Console.WriteLine($"  Dequeued: {dq?.Name}");
+Console.WriteLine();
+
+// ===================================================================
+// 8. ������� + ���������� OnTimer
+// ===================================================================
+Console.WriteLine("=== 8. ������� + OnTimer ���������� ===");
+
+var timers = project.Timers;
+int timerCnt = 0;
+timers.OnTimerElapsed += (t) =>
 {
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["condition"] = new ExpressionFieldValue("(Counter % 2) == 0")
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.assign")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"),
-        ["expression"] = new ConstantFieldValue(true)
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.else"));
-program.Lines.Add(new Instruction(line++, "core.assign")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"),
-        ["expression"] = new ConstantFieldValue(false)
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.endif"));
-
-// 7. Switch по Counter
-program.Lines.Add(new Instruction(line++, "core.switch")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["expression"] = new ExpressionFieldValue("Counter")
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.case")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["value"] = new ConstantFieldValue(2)
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.assign")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"),
-        ["expression"] = new ConstantFieldValue(100.0)
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.default"));
-program.Lines.Add(new Instruction(line++, "core.assign")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"),
-        ["expression"] = new ConstantFieldValue(0.0)
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.endswitch"));
-
-// 8. FOR цикл: for i from 1 to 5 step 1
-program.Lines.Add(new Instruction(line++, "core.for")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"),
-        ["start"] = new ExpressionFieldValue("Counter + 1"),
-        ["end"] = new ExpressionFieldValue("Counter + 5"),
-        ["step"] = new ExpressionFieldValue("1")
-    },
-    Comment = "Внутренний FOR"
-});
-program.Lines.Add(new Instruction(line++, "core.assign")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
-        ["expression"] = new ExpressionFieldValue("Sum + Counter")
-    }
-});
-program.Lines.Add(new Instruction(line++, "core.endfor"));
-
-// 9. Инкремент счётчика
-program.Lines.Add(new Instruction(line++, "core.assign")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"),
-        ["expression"] = new ExpressionFieldValue("Counter + 1")
-    }
-});
-
-// 10. Переход на START
-program.Lines.Add(new Instruction(line++, "core.jumplbl")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["labelName"] = new ConstantFieldValue("START")
-    }
-});
-
-// 11. Метка END
-program.Lines.Add(new Instruction(line++, "core.lbl")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["labelName"] = new ConstantFieldValue("END")
-    }
-});
-
-// 12. Return Sum
-program.Lines.Add(new Instruction(line++, "core.return")
-{
-    Fields = new Dictionary<string, FieldValue>
-    {
-        ["value"] = new ExpressionFieldValue("Sum")
-    }
-});
-
-// Заполняем метки
-program.Labels["START"] = 3;
-program.Labels["END"] = 22;
-
-// 6. Сохраняем всё в папку
-string baseFolder = Path.Combine(Environment.CurrentDirectory, "AstroData");
-Directory.CreateDirectory(baseFolder);
-
-// Сохраняем типы, формы, глобальные таблицы
-AstroSerializer.SaveDataTypeRegistry(typeRegistry, Path.Combine(baseFolder, "Registry"));
-AstroSerializer.SaveFormRegistry(formRegistry, Path.Combine(baseFolder, "Registry"));
-AstroSerializer.SaveGlobalTables(globalSet, Path.Combine(baseFolder, "Registry"));
-
-// Сохраняем программу в JSON
-var programFolder = Path.Combine(baseFolder, "Programs");
-AstroSerializer.SaveProgram(program, programFolder);
-
-// Сохраняем текстовое представление
-var textPath = Path.Combine(programFolder, $"{program.Name}.txt");
-// ProgramTextGenerator.SaveToFile(program, textPath);
-
-
-try
-{
-    Console.WriteLine($"Saving program to: {Path.Combine(programFolder, $"{program.Name}.ast")}");
-    Console.WriteLine($"Saving text to: {textPath}");
-    AstroSerializer.SaveProgram(program, programFolder);
-    ProgramTextGenerator.SaveToFile(program, textPath);
-    Console.WriteLine($"Данные сохранены в {baseFolder}");
-    Console.WriteLine($"Program file exists: {File.Exists(Path.Combine(programFolder, $"{program.Name}.ast"))}");
-    Console.WriteLine($"Text file exists: {File.Exists(textPath)}");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Error saving files: {ex.Message}");
-    Console.WriteLine(ex.StackTrace);
-}
-
-
-
-// 7. Загружаем обратно
-var loadedTypes = AstroSerializer.LoadDataTypeRegistry(Path.Combine(baseFolder, "Registry"));
-var loadedForms = AstroSerializer.LoadFormRegistry(Path.Combine(baseFolder, "Registry"));
-var loadedGlobals = AstroSerializer.LoadGlobalTables(Path.Combine(baseFolder, "Registry"), loadedTypes);
-var loadedProgram = AstroSerializer.LoadProgram(programFolder, program.Name, loadedTypes);
-
-Console.WriteLine("Данные успешно загружены.");
-
-// 8. Подготовка интерпретатора
-var interpreterContext = new InterpreterContext
-{
-    TypeRegistry = loadedTypes,
-    FormRegistry = loadedForms,
-    GlobalTables = loadedGlobals,
-    Functions = BuiltinFunctions.GetFunctions(),
-    ProgramRegistry = new Dictionary<string, AstroProgram>
-    {
-        [loadedProgram.Name] = loadedProgram
-    }
+    timerCnt++;
+    Console.WriteLine($"    ? {t.Name} # {t.ElapsedCount}");
 };
 
-var interpreter = new AstroInterpreter(interpreterContext);
-
-// Подписываемся на события (для отладки)
-interpreterContext.OnBeforeInstruction += (state, instr) =>
+// ������������� ������ (250ms)
+timers.Register(new TimerDefinition
 {
-    Console.WriteLine($"Выполняется строка {instr.LineNumber}: {instr.FormId}");
+    Name = "Periodic250", IntervalMs = 250, Mode = TimerMode.Periodic
+});
+
+// Oneshot ������ (500ms)
+timers.Register(new TimerDefinition
+{
+    Name = "Oneshot500", IntervalMs = 500, Mode = TimerMode.Oneshot
+});
+
+// ������ � �����������
+var timerWithInt = new TimerDefinition
+{
+    Name = "TimerWithInt", IntervalMs = 300, Mode = TimerMode.Periodic
 };
-interpreterContext.OnError += (state, ex) =>
+timers.Register(timerWithInt);
+
+// ������ ���������� OnTimer ��� ����� �������
+var intOnTimer = new InterruptDefinition
 {
-    Console.WriteLine($"Ошибка: {ex.Message}");
+    Id = "int-timer", Name = "OnTimerElapsed", TriggerType = InterruptTrigger.OnTimer,
+    TimerIntervalMs = 300, ExecutionMode = InterruptExecutionMode.Deferred, IsEnabled = true
 };
+interrupts.Register(intOnTimer);
 
-// Загружаем программу
-interpreter.LoadProgram(loadedProgram); // метод есть в AstroInterpreter
+Console.WriteLine("  �������� 1.2�...");
+Thread.Sleep(1200);
+timers.Disable("Periodic250");
+timers.Disable("TimerWithInt");
 
-// Задаём начальные значения аргументов (в локальных таблицах)
-var startVar = loadedProgram.LocalTables.FindVariable("StartValue");
-if (startVar != null) startVar.Value = 2;
-var multVar = loadedProgram.LocalTables.FindVariable("Multiplier");
-if (multVar != null) multVar.Value = 3.0;
+Console.WriteLine($"  ������������ Periodic250: ~4 (����: {timerCnt})");
+Console.WriteLine($"  Oneshot500 ��������: {timers.Timers.Values.FirstOrDefault(t => t.Name == "Oneshot500")?.ElapsedCount > 0}");
+Console.WriteLine();
 
-Console.WriteLine("\n=== Запуск программы ===");
-interpreter.Run(); // метод есть в AstroInterpreter
+// ===================================================================
+// 9. ������ � ������ STRUCT
+// ===================================================================
+Console.WriteLine("=== 9. ���� ��������� POINT ===");
 
-Console.WriteLine($"\nРезультат выполнения: {interpreter.State.ReturnValue}");
-Console.WriteLine("Значения локальных переменных после выполнения:");
-foreach (var kv in loadedProgram.LocalTables.Tables)
+// ������ ����������-���������
+var table = project.GlobalTables.GetOrCreateTable(pointType);
+var pointVar = new Variable("CurrentPos", pointType, new Dictionary<string, object>
 {
-    foreach (var v in kv.Value.Variables)
-        Console.WriteLine($"  {v.Name} = {v.Value}");
-}
+    ["X"] = 100.5, ["Y"] = 200.3, ["Z"] = 50.0
+});
+table.AddVariable(pointVar);
 
-Console.WriteLine("Глобальные переменные:");
-foreach (var kv in loadedGlobals.Tables)
+if (pointVar.Value is Dictionary<string, object> pos)
 {
-    foreach (var v in kv.Value.Variables)
-        Console.WriteLine($"  {v.Name} = {v.Value}");
+    Console.WriteLine($"  CurrentPos = ({pos["X"]}, {pos["Y"]}, {pos["Z"]})");
+    pos["X"] = 150.0;
+    Console.WriteLine($"  ����� X = 150: ({pos["X"]}, {pos["Y"]}, {pos["Z"]})");
 }
+Console.WriteLine();
+
+// ===================================================================
+// 10. ���������� ���������
+// ===================================================================
+Console.WriteLine("=== 10. ���������� ��������� ===");
+
+project.SaveAll();
+var loadProject = new ProjectManager();
+loadProject.Open(baseFolder);
+
+Console.WriteLine($"  ����� ��������: �����={loadProject.TypeRegistry.AllTypes.Count}, ����={loadProject.FormRegistry.AllForms.Count}");
+
+var interpreter = loadProject.CreateInterpreter();
+var prog = loadProject.Programs["MainProgram"];
+
+interpreter.Context.OnBeforeInstruction += (_, instr) =>
+    Console.WriteLine($"    [{instr.LineNumber,2}] {instr.FormId,-15} | {instr.Comment}");
+
+Console.WriteLine("  --- ������ MainProgram ---");
+// ����� �������� �� LoadProgram (����� DefaultValue)
+prog.Arguments.First(a => a.Name == "StartValue").DefaultValue = 1;
+interpreter.LoadProgram(prog);
+interpreter.Run();
+Console.WriteLine($"  ���������: {interpreter.State.ReturnValue}\n");
+
+// ===================================================================
+// 11. CALL (����� ������������ �������)
+// ===================================================================
+Console.WriteLine("=== 11. ����� ������������ Multiply ===");
+
+var subInterpreter = loadProject.CreateInterpreter();
+var multiply = loadProject.Programs["Multiply"];
+
+subInterpreter.Context.OnBeforeInstruction += (_, instr) =>
+    Console.WriteLine($"    [{instr.LineNumber}] {instr.FormId}");
+
+// ����� ��������� �� LoadProgram
+multiply.Arguments.First(a => a.Name == "A").DefaultValue = 7;
+multiply.Arguments.First(a => a.Name == "B").DefaultValue = 6;
+subInterpreter.LoadProgram(multiply);
+subInterpreter.Run();
+Console.WriteLine($"  7 * 6 = {subInterpreter.State.ReturnValue}\n");
+
+// ===================================================================
+// 12. ����������� (Foreground + Background)
+// ===================================================================
+Console.WriteLine("=== 12. ��������������� ===");
+
+var sched = loadProject.CreateScheduler();
+sched.OnTaskStarted += (s) => Console.WriteLine($"  [{s.TaskId}] {s.Name} � ��������");
+sched.OnTaskStopped += (s) => Console.WriteLine($"  [{s.TaskId}] {s.Name} � �����������");
+
+// Foreground � MainProgram
+sched.StartTask(new TaskConfig
+{
+    TaskId = 1, Name = "MainTask", Program = prog,
+    Type = TaskType.Foreground, Priority = TaskPriority.Normal
+});
+
+// Background � WatchDog
+var bgProg = new AstroProgram { Name = "BG", IsBackground = true, MaxCycles = 6 };
+bgProg.AddLocalVariable(new Variable("Tick", intType, 0), loadProject.TypeRegistry);
+bgProg.Lines.Add(new Instruction(1, "core.assign")
+{
+    Fields = new() { ["variable"] = new VariableFieldValue("LocalVariables", "Tick", "int"), ["expression"] = new ExpressionFieldValue("Tick + 1") },
+    Comment = "������� ���"
+});
+loadProject.AddProgram(bgProg);
+
+sched.StartTask(new TaskConfig
+{
+    TaskId = 2, Name = "BG", Program = bgProg,
+    Type = TaskType.Background, Priority = TaskPriority.Low,
+    CycleIntervalMs = 80, MaxCycles = 6
+});
+
+sched.StartScheduler();
+Thread.Sleep(400);
+sched.StopScheduler();
+Console.WriteLine();
+
+// ===================================================================
+// 13. ������������ � �������� ������
+// ===================================================================
+Console.WriteLine("=== 13. ������������ � �������� ������ ===");
+
+if (Directory.Exists(baseFolder))
+{
+    var allFiles = Directory.GetFiles(baseFolder, "*.*", SearchOption.AllDirectories);
+    Console.WriteLine($"  ������ � {baseFolder}: {allFiles.Length}");
+    foreach (var f in allFiles)
+        Console.WriteLine($"    {Path.GetRelativePath(baseFolder, f)}");
+}
+Console.WriteLine();
+
+// ===================================================================
+// ����
+// ===================================================================
+Console.WriteLine("�======================================================�");
+Console.WriteLine("�              �������� ������                       �");
+Console.WriteLine("L======================================================-");
+Console.WriteLine($"  ���� ������:     {loadProject.TypeRegistry.AllTypes.Count}");
+Console.WriteLine($"  ���������� ����: {loadProject.FormRegistry.AllForms.Count}");
+Console.WriteLine($"  ��������:        {loadProject.Programs.Count}");
+Console.WriteLine($"  ������ (���.):   {loadProject.Alarms.Definitions.Count}");
+Console.WriteLine($"  ����������:      {loadProject.Interrupts.Definitions.Count}");
+Console.WriteLine($"  ��������:        {loadProject.Timers.Timers.Count}");
+Console.WriteLine($"  ����. ������:    {loadProject.GlobalTables.Tables.Count}");
+Console.WriteLine($"  ���������:       {interpreter.State.ReturnValue}");
+
+Console.WriteLine("\n��������� ��������� ����������:");
+foreach (var t in prog.LocalTables.Tables.Values)
+    foreach (var v in t.Variables)
+        Console.WriteLine($"  {v.Name,-15} = {v.Value}");
+
+Console.WriteLine("\n��������� ���������� ����������:");
+foreach (var t in loadProject.GlobalTables.Tables.Values)
+    foreach (var v in t.Variables)
+        Console.WriteLine($"  {v.Name,-15} = {v.Value}");
+
+Console.WriteLine("\n? ������ ���� Data > Binding > Execution ��������!");
+Console.WriteLine("   ��� 30+ ����������, ������, ����������, �������, ������������, CALL, ������������.");

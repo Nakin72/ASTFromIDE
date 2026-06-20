@@ -1,0 +1,514 @@
+{
+  "name": "MainProgram",
+  "author": "Demo",
+  "description": "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD",
+  "version": "4.0",
+  "created": "2026-06-19T22:18:02.0810005Z",
+  "modified": "2026-06-19T22:18:02.0810059Z",
+  "returnTypeId": "int",
+  "isMenuFunction": false,
+  "isBackground": false,
+  "taskGroup": 1,
+  "arguments": [
+    {
+      "name": "StartValue",
+      "typeId": "int",
+      "direction": "in",
+      "defaultValue": 0
+    },
+    {
+      "name": "ColorArg",
+      "typeId": "color",
+      "direction": "in",
+      "defaultValue": 0
+    }
+  ],
+  "localTables": {
+    "name": "LocalVariables",
+    "isGlobal": false,
+    "tables": {
+      "int": {
+        "typeId": "int",
+        "variables": [
+          {
+            "name": "Counter",
+            "typeId": "int",
+            "value": 0,
+            "comment": null,
+            "constraints": null
+          },
+          {
+            "name": "Sum",
+            "typeId": "int",
+            "value": 0,
+            "comment": null,
+            "constraints": null
+          }
+        ]
+      },
+      "real": {
+        "typeId": "real",
+        "variables": [
+          {
+            "name": "Temp",
+            "typeId": "real",
+            "value": 0,
+            "comment": null,
+            "constraints": null
+          }
+        ]
+      },
+      "bool": {
+        "typeId": "bool",
+        "variables": [
+          {
+            "name": "IsEven",
+            "typeId": "bool",
+            "value": false,
+            "comment": null,
+            "constraints": null
+          }
+        ]
+      },
+      "double": {
+        "typeId": "double",
+        "variables": [
+          {
+            "name": "X",
+            "typeId": "double",
+            "value": 0,
+            "comment": null,
+            "constraints": null
+          }
+        ]
+      }
+    }
+  },
+  "lines": [
+    {
+      "lineNumber": 1,
+      "comment": "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD = \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Counter",
+          "typeId": "int"
+        },
+        "expression": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "StartValue"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 2,
+      "comment": "Sum = 0",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Sum",
+          "typeId": "int"
+        },
+        "expression": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": 0
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 3,
+      "comment": "",
+      "formId": "core.lbl",
+      "fields": {
+        "labelName": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": "START"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 4,
+      "comment": "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD \uFFFD\uFFFD\uFFFD \u003E= 6",
+      "formId": "core.jumpif",
+      "fields": {
+        "condition": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Counter \u003E= 6"
+        },
+        "labelName": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": "END"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 5,
+      "comment": "",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Sum",
+          "typeId": "int"
+        },
+        "expression": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Sum \u002B Counter"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 6,
+      "comment": "",
+      "formId": "core.if",
+      "fields": {
+        "condition": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "(Counter % 2) == 0"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 7,
+      "comment": "\u05F8\uFFFD",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "IsEven",
+          "typeId": "bool"
+        },
+        "expression": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": true
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 8,
+      "comment": "",
+      "formId": "core.else",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 9,
+      "comment": "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "IsEven",
+          "typeId": "bool"
+        },
+        "expression": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": false
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 10,
+      "comment": "",
+      "formId": "core.endif",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 11,
+      "comment": "",
+      "formId": "core.switch",
+      "fields": {
+        "expression": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Counter"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 12,
+      "comment": "",
+      "formId": "core.case",
+      "fields": {
+        "value": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": 2
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 13,
+      "comment": "Case 2",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Temp",
+          "typeId": "real"
+        },
+        "expression": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": 100
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 14,
+      "comment": "",
+      "formId": "core.default",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 15,
+      "comment": "Default",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Temp",
+          "typeId": "real"
+        },
+        "expression": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": 0
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 16,
+      "comment": "",
+      "formId": "core.endswitch",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 17,
+      "comment": "FOR \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD.",
+      "formId": "core.for",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Counter",
+          "typeId": "int"
+        },
+        "start": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Counter \u002B 1"
+        },
+        "end": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Counter \u002B 3"
+        },
+        "step": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "1"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 18,
+      "comment": "",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Sum",
+          "typeId": "int"
+        },
+        "expression": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Sum \u002B Counter"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 19,
+      "comment": "",
+      "formId": "core.if",
+      "fields": {
+        "condition": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Sum \u003E 50"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 20,
+      "comment": "Break \uFFFD\uFFFD\uFFFD Sum\u003E50",
+      "formId": "core.break",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 21,
+      "comment": "",
+      "formId": "core.endif",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 22,
+      "comment": "",
+      "formId": "core.endfor",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 23,
+      "comment": "",
+      "formId": "core.assign",
+      "fields": {
+        "variable": {
+          "$type": "variable",
+          "Type": "variable",
+          "tableSetName": "LocalVariables",
+          "variableName": "Counter",
+          "typeId": "int"
+        },
+        "expression": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Counter \u002B 1"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 24,
+      "comment": "",
+      "formId": "core.if",
+      "fields": {
+        "condition": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "(Counter % 2) == 0"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 25,
+      "comment": "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD",
+      "formId": "core.continue",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 26,
+      "comment": "",
+      "formId": "core.endif",
+      "fields": {},
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 27,
+      "comment": "",
+      "formId": "core.jumplbl",
+      "fields": {
+        "labelName": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": "START"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 28,
+      "comment": "",
+      "formId": "core.lbl",
+      "fields": {
+        "labelName": {
+          "$type": "constant",
+          "Type": "constant",
+          "value": "END"
+        }
+      },
+      "breakpoint": false
+    },
+    {
+      "lineNumber": 29,
+      "comment": "",
+      "formId": "core.return",
+      "fields": {
+        "value": {
+          "$type": "expression",
+          "Type": "expression",
+          "expression": "Sum"
+        }
+      },
+      "breakpoint": false
+    }
+  ],
+  "labels": {
+    "START": 3,
+    "END": 28
+  },
+  "permissions": {
+    "readRoles": [
+      "operator"
+    ],
+    "writeRoles": [
+      "programmer"
+    ],
+    "executeRoles": [
+      "operator",
+      "programmer"
+    ]
+  },
+  "maxCycles": 1000
+}

@@ -1,0 +1,84 @@
+{
+  "name": "GlobalVariables",
+  "isGlobal": true,
+  "tables": {
+    "int": {
+      "typeId": "int",
+      "variables": [
+        {
+          "name": "GlobalCounter",
+          "typeId": "int",
+          "value": 0,
+          "comment": null,
+          "constraints": null
+        },
+        {
+          "name": "Sensor1",
+          "typeId": "int",
+          "value": 0,
+          "comment": null,
+          "constraints": null
+        },
+        {
+          "name": "Sensor2",
+          "typeId": "int",
+          "value": 0,
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    },
+    "real": {
+      "typeId": "real",
+      "variables": [
+        {
+          "name": "Pi",
+          "typeId": "real",
+          "value": 3.14159,
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    },
+    "string": {
+      "typeId": "string",
+      "variables": [
+        {
+          "name": "Status",
+          "typeId": "string",
+          "value": "Idle",
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    },
+    "color": {
+      "typeId": "color",
+      "variables": [
+        {
+          "name": "SelectedColor",
+          "typeId": "color",
+          "value": 0,
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    },
+    "point": {
+      "typeId": "point",
+      "variables": [
+        {
+          "name": "CurrentPos",
+          "typeId": "point",
+          "value": {
+            "X": 150,
+            "Y": 200.3,
+            "Z": 50
+          },
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    }
+  }
+}
