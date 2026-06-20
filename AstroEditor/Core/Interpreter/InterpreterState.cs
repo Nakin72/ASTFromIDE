@@ -38,6 +38,11 @@ public class InterpreterState
     public object? ReturnValue { get; set; }
     public Stack<SwitchContext> SwitchStack { get; set; } = new();
 
+    /// <summary>Стек контекстов обработки исключений (для TRY/CATCH)</summary>
+    public Stack<ExceptionContext> ExceptionStack { get; set; } = new();
+
+    /// <summary>Текущее активное исключение (если есть)</summary>
+    public ExceptionContext? CurrentException { get; set; }
 }
 public class SwitchContext
 {
@@ -75,4 +80,47 @@ public class LoopContext
     public object? StepValue { get; set; }
     public bool IsIncreasing { get; set; } // true если шаг > 0
     public object? CurrentValue { get; set; }
+    
+    // Специфичные для FOR EACH
+    public bool IsForEachLoop { get; set; }
+    public string? ItemVariableName { get; set; } // имя переменной для элемента
+    public string? CollectionVariableName { get; set; } // имя переменной коллекции
+    public List<object?>? CollectionValues { get; set; } // значения коллекции
+    public int CurrentIndex { get; set; } // текущий индекс в коллекции
+}
+
+/// <summary>
+/// Контекст обработки исключений (для TRY/CATCH/FINALLY)
+/// </summary>
+public class ExceptionContext
+{
+    /// <summary>Индекс строки начала TRY блока</summary>
+    public int TryStartLineIndex { get; set; }
+
+    /// <summary>Индекс строки начала CATCH блока (если есть)</summary>
+    public int? CatchLineIndex { get; set; }
+
+    /// <summary>Индекс строки начала FINALLY блока (если есть)</summary>
+    public int? FinallyLineIndex { get; set; }
+
+    /// <summary>Индекс строки после ENDTRY</summary>
+    public int EndLineIndex { get; set; }
+
+    /// <summary>Переменная для хранения исключения (если указана в CATCH)</summary>
+    public string? ExceptionVariableName { get; set; }
+
+    /// <summary>Код ошибки для фильтрации (0 = любая ошибка)</summary>
+    public int ErrorCodeFilter { get; set; } = 0;
+
+    /// <summary>Флаг: исключение было перехвачено</summary>
+    public bool ExceptionCaught { get; set; } = false;
+
+    /// <summary>Флаг: выполнение блока FINALLY</summary>
+    public bool FinallyExecuted { get; set; } = false;
+
+    /// <summary>Сообщение об исключении</summary>
+    public string? ExceptionMessage { get; set; }
+
+    /// <summary>Код исключения</summary>
+    public int ExceptionCode { get; set; }
 }

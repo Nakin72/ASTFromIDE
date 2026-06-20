@@ -14,7 +14,7 @@ using AstroEditor.Core.Tables;
 using AstroEditor.Core.Types;
 using AstroEditor.Core.Expressions;
 using AstroEditor.Core.Interpreter;
-
+using AstroEditor.Core.Plugins;
 using AstroEditor.Core.Alarms;
 using AstroGlobalTables = AstroEditor.Core.Tables.VariableTableSet;
 using AstroScheduler = AstroEditor.Core.Execution.TaskScheduler;
@@ -111,6 +111,10 @@ public class ProjectManager
         }
     }
 
+    // Менеджер плагинов
+    private PluginManager? _pluginManager;
+    public PluginManager? Plugins => _pluginManager;
+
     // Событие изменения
     public event Action? OnProjectChanged;
 
@@ -138,8 +142,36 @@ public class ProjectManager
         _alarmManager = new AlarmManager();
         _alarmManager.RegisterSystemAlarms();
 
+        // Инициализация плагинов
+        var pluginsFolder = Path.Combine(_projectFolder, "Plugins");
+        _pluginManager = new PluginManager(
+            pluginsFolder,
+            RegisterInstruction,
+            RegisterFunction,
+            FormRegistry.RegisterForm,
+            TypeRegistry.RegisterType
+        );
+        _pluginManager.LoadAllPlugins();
+
         _hasUnsavedChanges = true;
         OnProjectChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Регистрация обработчика инструкции (для плагинов)
+    /// </summary>
+    private void RegisterInstruction(string formId, Action<Instruction> handler)
+    {
+        // Обработчики будут добавлены в интерпретатор при его создании
+        // Здесь можно добавить дополнительную логику
+    }
+
+    /// <summary>
+    /// Регистрация функции (для плагинов)
+    /// </summary>
+    private void RegisterFunction(string name, IBuiltinFunction function)
+    {
+        _state.Functions[name] = function.Execute;
     }
 
     /// <summary>
@@ -258,7 +290,7 @@ public class ProjectManager
             Functions = _state.Functions,
             ProgramRegistry = _state.Programs
         };
-        return new AstroInterpreter(context);
+        return new AstroInterpreter(context, _pluginManager);
     }
 
     /// <summary>
@@ -367,6 +399,8 @@ public class ProjectManager
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndWhileForm());
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateForForm());
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndForForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateForEachForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndForEachForm());
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateIfForm());
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateElseForm());
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndIfForm());
@@ -401,6 +435,14 @@ public class ProjectManager
 
         // Форма WAIT
         _state.FormRegistry.RegisterForm(BuiltinForms.CreateWaitForm());
+
+        // Формы обработки исключений
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateTryForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateCatchForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateFinallyForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndTryForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateThrowForm());
+        _state.FormRegistry.RegisterForm(BuiltinForms.CreateRethrowForm());
     }
 
     private void RegisterBuiltinFunctions()
