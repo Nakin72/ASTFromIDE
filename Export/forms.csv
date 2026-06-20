@@ -1,0 +1,53 @@
+FormId,Name,Category,FieldName,FieldType,Required,Description
+core.assign,Assign,Assignment,variable,Variable,True,Переменная
+core.assign,Assign,Assignment,expression,Expression,True,Выражение
+core.while,While,Logic,condition,Expression,True,Условие
+core.while,While,Logic,maxIterations,Constant,False,Макс. итераций
+core.for,For,Logic,variable,Variable,True,Переменная-счётчик
+core.for,For,Logic,start,Expression,True,Начальное значение
+core.for,For,Logic,end,Expression,True,Конечное значение
+core.for,For,Logic,step,Expression,False,Шаг
+core.foreach,ForEach,Logic,itemVariable,Variable,True,Переменная элемента
+core.foreach,ForEach,Logic,collection,Variable,True,Коллекция (массив)
+core.if,If,Logic,condition,Expression,True,Условие
+core.switch,Switch,Logic,expression,Expression,True,Выражение
+core.case,Case,Logic,value,Constant,True,Значение
+core.call,Call,Program Control,programName,Constant,True,Имя программы
+core.call,Call,Program Control,arguments,Expression,False,Аргументы
+core.call,Call,Program Control,resultVariable,Variable,False,Переменная результата
+core.return,Return,Program Control,value,Expression,False,Возвращаемое значение
+core.lbl,Lbl,Program Control,labelName,Constant,True,Имя метки
+core.jumplbl,JumpLbl,Program Control,labelName,Constant,True,Метка
+core.jumpif,JumpIf,Program Control,condition,Expression,True,Условие
+core.jumpif,JumpIf,Program Control,labelName,Constant,True,Метка
+core.alarm.raise,RaiseAlarm,Alarm,code,Constant,True,Код аварии
+core.alarm.raise,RaiseAlarm,Alarm,message,Expression,False,Сообщение
+core.alarm.raise,RaiseAlarm,Alarm,severity,Enum,False,Тяжесть
+core.alarm.clear,ClearAlarm,Alarm,code,Constant,True,Код аварии
+core.alarm.ack,AckAlarm,Alarm,code,Constant,True,Код аварии
+core.interrupt.declare,DeclareInterrupt,Interrupt,name,Constant,True,Имя прерывания
+core.interrupt.declare,DeclareInterrupt,Interrupt,triggerType,Enum,True,Тип триггера
+core.interrupt.declare,DeclareInterrupt,Interrupt,expression,Expression,False,Выражение (для OnChange/OnValue)
+core.interrupt.declare,DeclareInterrupt,Interrupt,variableName,Variable,False,Переменная (для OnChange)
+core.interrupt.declare,DeclareInterrupt,Interrupt,alarmCode,Constant,False,Код аварии (для OnAlarm)
+core.interrupt.declare,DeclareInterrupt,Interrupt,timerMs,Constant,False,Интервал таймера мс (для OnTimer)
+core.interrupt.declare,DeclareInterrupt,Interrupt,handlerProgram,Constant,True,Программа-обработчик
+core.interrupt.declare,DeclareInterrupt,Interrupt,executionMode,Enum,False,Режим выполнения
+core.interrupt.on,InterruptOn,Interrupt,name,Constant,True,Имя прерывания
+core.interrupt.off,InterruptOff,Interrupt,name,Constant,True,Имя прерывания
+core.timer.declare,DeclareTimer,Timer,name,Constant,True,Имя таймера
+core.timer.declare,DeclareTimer,Timer,intervalMs,Constant,True,Интервал (мс)
+core.timer.declare,DeclareTimer,Timer,mode,Enum,False,Режим
+core.timer.declare,DeclareTimer,Timer,handlerProgram,Constant,False,Программа-обработчик
+core.timer.on,TimerOn,Timer,name,Constant,True,Имя таймера
+core.timer.off,TimerOff,Timer,name,Constant,True,Имя таймера
+core.timer.reset,TimerReset,Timer,name,Constant,True,Имя таймера
+core.wait,Wait,Control,mode,Enum,True,Режим ожидания
+core.wait,Wait,Control,timeMs,Constant,False,Время ожидания (мс)
+core.wait,Wait,Control,condition,Expression,False,Условие
+core.wait,Wait,Control,timeoutMs,Constant,False,Таймаут (мс; 0 = бесконечно)
+core.catch,Catch,Exception Handling,exceptionVariable,Variable,False,Переменная для исключения
+core.catch,Catch,Exception Handling,errorCode,Constant,False,Код ошибки (опционально)
+core.throw,Throw,Exception Handling,errorCode,Constant,True,Код ошибки
+core.throw,Throw,Exception Handling,message,Expression,False,Сообщение
+core.throw,Throw,Exception Handling,severity,Enum,False,Тяжесть

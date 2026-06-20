@@ -1,0 +1,31 @@
+╔══════════════════════════════════════════════════════════╗
+║                  Прерывания (Interrupts)                 ║
+╠══════════════════════════════════════════════════════════╣
+
+  BgSensorCheck (int-bg)
+     Триггер: OnValue
+     Режим: Background
+     Включено: True
+     Выражение: Sensor1 > 5
+     Обработчик: Multiply
+
+  OnRisingSensor2 (int-rise)
+     Триггер: OnRisingEdge
+     Режим: Inline
+     Включено: True
+     Переменная: Sensor2
+
+  OnSafetyAlarm (int-alarm)
+     Триггер: OnAlarm
+     Режим: Deferred
+     Включено: True
+     Код аварии: 1001
+
+  OnTimerElapsed (int-timer)
+     Триггер: OnTimer
+     Режим: Deferred
+     Включено: True
+     Интервал таймера: 300 мс
+
+══════════════════════════════════════════════════════════
+Экспортировано: 20.06.2026 18:20:51

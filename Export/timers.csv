@@ -1,0 +1,4 @@
+Name,IntervalMs,Mode
+Periodic250,250,Periodic
+Oneshot500,500,Oneshot
+TimerWithInt,300,Periodic

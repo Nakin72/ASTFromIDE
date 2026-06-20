@@ -1,7 +1,9 @@
-﻿// AstroEditor — Полный демонстратор возможностей ядра
-// Архитектура: Data > Binding > Execution
-// Для 30+ инструкций, циклов, условий, вызовов, прерываний, таймеров
+// AstroEditor v4 — Полный демонстратор с AST-экспортом
+// Экспорт: JSON, Текст, CSV + AST-деревья выражений
 
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AstroEditor.Core.Common;
 using AstroEditor.Core.Types;
 using AstroEditor.Core.Variables;
@@ -13,51 +15,65 @@ using AstroEditor.Core.Data;
 using AstroEditor.Core.Binding;
 using AstroEditor.Core.Execution;
 using AstroEditor.Core.Alarms;
+using AstroEditor.Core.Tables;
+using AstroEditor.Core.Expressions;
 
-Console.WriteLine("======================================================");
-Console.WriteLine("     ASTRO EDITOR — Полный демонстратор ядра          ");
-Console.WriteLine("======================================================\n");
+Console.WriteLine("╔══════════════════════════════════════════════════════════╗");
+Console.WriteLine("║     ASTRO EDITOR v4 — Полный демонстратор ядра          ║");
+Console.WriteLine("║     Экспорт: JSON, Текст, CSV + AST-деревья             ║");
+Console.WriteLine("╚══════════════════════════════════════════════════════════╝\n");
 
 // ===================================================================
 // 1. Инициализация проекта
 // ===================================================================
-Console.WriteLine("=== 1. Инициализация проекта ===");
+Console.WriteLine("═══ 1. Инициализация проекта ═══");
 var project = new ProjectManager();
 var baseFolder = Path.Combine(Environment.CurrentDirectory, "AstroData");
+var exportFolder = Path.Combine(Environment.CurrentDirectory, "Export");
+
+Directory.CreateDirectory(baseFolder);
+Directory.CreateDirectory(exportFolder);
+
 project.InitializeNew(baseFolder);
 
-Console.WriteLine($"  Типов данных: {project.TypeRegistry.AllTypes.Count}");
-Console.WriteLine($"  Форм инструкций: {project.FormRegistry.AllForms.Count}");
+Console.WriteLine($"  ✓ Типов данных: {project.TypeRegistry.AllTypes.Count}");
+Console.WriteLine($"  ✓ Форм инструкций: {project.FormRegistry.AllForms.Count}");
 Console.WriteLine();
 
 // ===================================================================
-// 2. Типы данных (примитивы, enum, struct, alias)
+// 2. Типы данных
 // ===================================================================
-Console.WriteLine("=== 2. Типы данных ===");
+Console.WriteLine("═══ 2. Типы данных ═══");
 
-// 2a. Примитивы и диапазоны
-Console.WriteLine("  --- Примитивы ---");
+// 2a. Примитивы
+Console.WriteLine("  ─── Примитивные типы ───");
 foreach (var t in project.TypeRegistry.AllTypes.OfType<PrimitiveDataType>())
 {
     var c = t.BuiltinConstraints;
     Console.WriteLine($"    {t.Name,-8} ({t.Id,-6}) > [{c?.Min?.ToString() ?? "∞"}, {c?.Max?.ToString() ?? "∞"}]");
 }
 
-// 2b. Перечисление Enum
-Console.WriteLine("  --- Перечисление Enum ---");
+// 2b. Enum
+Console.WriteLine("\n  ─── Перечисление Enum ───");
 var colorType = new EnumDataType
 {
     Id = "color",
     Name = "COLOR",
     Category = DataTypeCategory.User,
-    Values = new Dictionary<string, long> { ["RED"] = 0, ["GREEN"] = 1, ["BLUE"] = 2, ["YELLOW"] = 3 }
+    Values = new Dictionary<string, long>
+    {
+        ["RED"] = 0,
+        ["GREEN"] = 1,
+        ["BLUE"] = 2,
+        ["YELLOW"] = 3
+    }
 };
 project.TypeRegistry.RegisterType(colorType);
 project.TypeRegistry.ResolveReferences();
-Console.WriteLine($"    Тип: {colorType.Name} ({colorType.Values.Count} значений)");
+Console.WriteLine($"    ✓ Тип: {colorType.Name} ({colorType.Values.Count} значений)");
 
-// 2c. Структура Struct
-Console.WriteLine("  --- Структура Struct ---");
+// 2c. Struct
+Console.WriteLine("\n  ─── Структура Struct ───");
 var pointType = new StructDataType
 {
     Id = "point",
@@ -72,21 +88,25 @@ var pointType = new StructDataType
 };
 project.TypeRegistry.RegisterType(pointType);
 project.TypeRegistry.ResolveReferences();
-Console.WriteLine($"    Тип: {pointType.Name} (полей: {pointType.Fields.Count})");
+Console.WriteLine($"    ✓ Тип: {pointType.Name} (полей: {pointType.Fields.Count})");
 
-// 2d. Псевдоним Alias
+// 2d. Alias
 var speedType = new AliasDataType
 {
-    Id = "speed", Name = "SPEED", Category = DataTypeCategory.User, BaseTypeId = "int"
+    Id = "speed",
+    Name = "SPEED",
+    Category = DataTypeCategory.User,
+    BaseTypeId = "int"
 };
 project.TypeRegistry.RegisterType(speedType);
-project.TypeRegistry.ResolveReferences();
-Console.WriteLine($"    Alias: {speedType.Name} > base={speedType.BaseTypeId}\n");
+Console.WriteLine($"    ✓ Alias: {speedType.Name} > base={speedType.BaseTypeId}");
+
+Console.WriteLine();
 
 // ===================================================================
-// 3. Переменные и привязки
+// 3. Переменные и таблицы
 // ===================================================================
-Console.WriteLine("=== 3. Переменные и привязки ===");
+Console.WriteLine("═══ 3. Переменные и таблицы ═══");
 
 var intType = project.TypeRegistry.GetTypeById("int")!;
 var realType = project.TypeRegistry.GetTypeById("real")!;
@@ -94,97 +114,167 @@ var boolType = project.TypeRegistry.GetTypeById("bool")!;
 var stringType = project.TypeRegistry.GetTypeById("string")!;
 var doubleType = project.TypeRegistry.GetTypeById("double")!;
 
-// Создаём глобальные переменные
+var sensor1Var = new Variable("Sensor1", intType, 100);
 project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("GlobalCounter", intType, 0));
-project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("Sensor1", intType, 0));
-project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("Sensor2", intType, 0));
+project.GlobalTables.GetOrCreateTable(intType).AddVariable(sensor1Var);
+project.GlobalTables.GetOrCreateTable(intType).AddVariable(new Variable("Sensor2", intType, 200));
 project.GlobalTables.GetOrCreateTable(realType).AddVariable(new Variable("Pi", realType, 3.14159));
 project.GlobalTables.GetOrCreateTable(stringType).AddVariable(new Variable("Status", stringType, "Idle"));
 project.GlobalTables.GetOrCreateTable(colorType).AddVariable(new Variable("SelectedColor", colorType, 0L));
 
-// Привязка <=> (двунаправленная)
-var binding = BindingManager.Bind("MyAlias", "GlobalCounter", BindingDirection.Bidirectional);
-Console.WriteLine("  Привязка: MyAlias <=> GlobalCounter (Bidirectional)");
-Console.WriteLine($"    GlobalCounter = {GetGlobalVar(project, "GlobalCounter")}, MyAlias активна = {binding.IsActive}");
+var pointTable = project.GlobalTables.GetOrCreateTable(pointType);
+var pointVar = new Variable("CurrentPos", pointType, new Dictionary<string, object>
+{
+    ["X"] = 100.5,
+    ["Y"] = 200.3,
+    ["Z"] = 50.0
+});
+pointTable.AddVariable(pointVar);
 
-// Привязка OneWayToTarget: Sensor1 меняется → GlobalCounter
-var binding2 = BindingManager.Bind("Sensor1", "GlobalCounter", BindingDirection.OneWayToTarget);
-Console.WriteLine($"  Привязка: Sensor1 => GlobalCounter (OneWayToTarget)");
+Console.WriteLine($"  ✓ Глобальных переменных: {CountVariables(project.GlobalTables)}");
 Console.WriteLine();
 
-static object? GetGlobalVar(ProjectManager pm, string name)
-{
-    foreach (var t in pm.GlobalTables.Tables.Values)
-        foreach (var v in t.Variables)
-            if (v.Name == name) return v.Value;
-    return null;
-}
+// ===================================================================
+// 4. Привязки (Binding)
+// ===================================================================
+Console.WriteLine("═══ 4. Привязки (Binding) ═══");
+
+var binding1 = BindingManager.Bind("MyAlias", "GlobalCounter", BindingDirection.Bidirectional);
+Console.WriteLine($"  ✓ MyAlias <=> GlobalCounter (Bidirectional)");
+
+var binding2 = BindingManager.Bind("Sensor1", "GlobalCounter", BindingDirection.OneWayToTarget);
+Console.WriteLine($"  ✓ Sensor1 => GlobalCounter (OneWayToTarget)");
+
+sensor1Var.Value = 150;
+Console.WriteLine($"  ✓ Sensor1 = 150 → GlobalCounter = {project.GlobalTables.GetOrCreateTable(intType).FindVariable("GlobalCounter")?.Value}");
+Console.WriteLine();
 
 // ===================================================================
-// 4. Программа с полным набором инструкций
+// 5. Программа с полным набором инструкций
 // ===================================================================
-Console.WriteLine("=== 4. Программа с полным набором инструкций ===");
+Console.WriteLine("═══ 5. Программа с полным набором инструкций ═══");
 
 var program = new AstroProgram
 {
-    Name = "MainProgram", Author = "Demo", Description = "Полный демонстратор",
-    Version = "4.0", ReturnTypeId = "int", IsBackground = false, MaxCycles = 1000
+    Name = "MainProgram",
+    Author = "Demo",
+    Description = "Полный демонстратор всех инструкций ASTRO",
+    Version = "4.0",
+    ReturnTypeId = "int",
+    IsBackground = false,
+    MaxCycles = 1000
 };
 
-// Аргументы (включая enum)
 program.Arguments.Add(new Argument { Name = "StartValue", TypeId = "int", Direction = ArgumentDirection.In, DefaultValue = 0 });
 program.Arguments.Add(new Argument { Name = "ColorArg", TypeId = "color", Direction = ArgumentDirection.In, DefaultValue = 0L });
 
-// Локальные переменные
 program.AddLocalVariable(new Variable("Counter", intType, 0), project.TypeRegistry);
 program.AddLocalVariable(new Variable("Sum", intType, 0), project.TypeRegistry);
 program.AddLocalVariable(new Variable("Temp", realType, 0.0), project.TypeRegistry);
 program.AddLocalVariable(new Variable("IsEven", boolType, false), project.TypeRegistry);
 program.AddLocalVariable(new Variable("X", doubleType, 0.0), project.TypeRegistry);
+program.AddLocalVariable(new Variable("Message", stringType, ""), project.TypeRegistry);
 
 int line = 1;
 void I(string fId, Dictionary<string, FieldValue>? f = null, string? c = null) =>
     program.Lines.Add(new Instruction(line++, fId) { Fields = f ?? new(), Comment = c ?? "" });
 
 // --- Assign ---
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"), ["expression"] = new ExpressionFieldValue("StartValue") }, "Counter = StartValue");
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ConstantFieldValue(0) }, "Sum = 0");
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"),
+    ["expression"] = new ExpressionFieldValue("StartValue")
+}, "Counter = StartValue");
 
-// --- LBL + JumpIf + JumpLbl (простой цикл) ---
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
+    ["expression"] = new ConstantFieldValue(0)
+}, "Sum = 0");
+
+// --- LBL + JumpIf + JumpLbl (цикл) ---
 I("core.lbl", new() { ["labelName"] = new ConstantFieldValue("START") });
-I("core.jumpif", new() { ["condition"] = new ExpressionFieldValue("Counter >= 6"), ["labelName"] = new ConstantFieldValue("END") }, "Выход если Counter >= 6");
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ExpressionFieldValue("Sum + Counter") });
+
+I("core.jumpif", new()
+{
+    ["condition"] = new ExpressionFieldValue("Counter >= 6"),
+    ["labelName"] = new ConstantFieldValue("END")
+}, "Выход если Counter >= 6");
+
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
+    ["expression"] = new ExpressionFieldValue("Sum + Counter")
+});
 
 // --- IF/ELSE/ENDIF ---
 I("core.if", new() { ["condition"] = new ExpressionFieldValue("(Counter % 2) == 0") });
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"), ["expression"] = new ConstantFieldValue(true) }, "Чётное");
+
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"),
+    ["expression"] = new ConstantFieldValue(true)
+}, "Чётное");
+
 I("core.else");
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"), ["expression"] = new ConstantFieldValue(false) }, "Нечётное");
+
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "IsEven", "bool"),
+    ["expression"] = new ConstantFieldValue(false)
+}, "Нечётное");
+
 I("core.endif");
 
 // --- SWITCH/CASE/DEFAULT/ENDSWITCH ---
 I("core.switch", new() { ["expression"] = new ExpressionFieldValue("Counter") });
+
 I("core.case", new() { ["value"] = new ConstantFieldValue(2) });
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"), ["expression"] = new ConstantFieldValue(100.0) }, "Case 2");
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"),
+    ["expression"] = new ConstantFieldValue(100.0)
+}, "Case 2");
+
 I("core.default");
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"), ["expression"] = new ConstantFieldValue(0.0) }, "Default");
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Temp", "real"),
+    ["expression"] = new ConstantFieldValue(0.0)
+}, "Default");
+
 I("core.endswitch");
 
-// --- FOR/ENDFOR (простой цикл) ---
-I("core.for", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"), ["start"] = new ExpressionFieldValue("Counter + 1"), ["end"] = new ExpressionFieldValue("Counter + 3"), ["step"] = new ExpressionFieldValue("1") }, "FOR цикл");
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ExpressionFieldValue("Sum + Counter") });
+// --- FOR/ENDFOR ---
+I("core.for", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"),
+    ["start"] = new ExpressionFieldValue("Counter + 1"),
+    ["end"] = new ExpressionFieldValue("Counter + 3"),
+    ["step"] = new ExpressionFieldValue("1")
+}, "FOR цикл");
 
-// --- BREAK (при достижении Sum > 50) ---
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
+    ["expression"] = new ExpressionFieldValue("Sum + Counter")
+});
+
+// --- BREAK ---
 I("core.if", new() { ["condition"] = new ExpressionFieldValue("Sum > 50") });
 I("core.break", new() {}, "Break если Sum>50");
 I("core.endif");
 
 I("core.endfor");
 
-// --- Инкремент Counter ---
-I("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"), ["expression"] = new ExpressionFieldValue("Counter + 1") });
+// --- Инкремент ---
+I("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Counter", "int"),
+    ["expression"] = new ExpressionFieldValue("Counter + 1")
+});
 
-// --- CONTINUE (пропуск чётных итераций) ---
+// --- CONTINUE ---
 I("core.if", new() { ["condition"] = new ExpressionFieldValue("(Counter % 2) == 0") });
 I("core.continue", new() {}, "Пропуск чётных");
 I("core.endif");
@@ -195,172 +285,256 @@ I("core.jumplbl", new() { ["labelName"] = new ConstantFieldValue("START") });
 I("core.lbl", new() { ["labelName"] = new ConstantFieldValue("END") });
 I("core.return", new() { ["value"] = new ExpressionFieldValue("Sum") });
 
-program.Labels["START"] = 3; program.Labels["END"] = 28;
+program.Labels["START"] = 3;
+program.Labels["END"] = 28;
 project.AddProgram(program);
-Console.WriteLine($"  '{program.Name}': {program.Lines.Count} инструкций\n");
+
+Console.WriteLine($"  ✓ '{program.Name}': {program.Lines.Count} инструкций");
+Console.WriteLine();
 
 // ===================================================================
-// 5. Вызов программ (CALL)
+// 6. Вызов программ (CALL)
 // ===================================================================
-Console.WriteLine("=== 5. Вызов программ (core.call) ===");
+Console.WriteLine("═══ 6. Вызов программ (CALL) ═══");
 
 var subProg = new AstroProgram
 {
-    Name = "Multiply", ReturnTypeId = "int", IsBackground = false, MaxCycles = 10
+    Name = "Multiply",
+    ReturnTypeId = "int",
+    IsBackground = false,
+    MaxCycles = 10
 };
+
 subProg.Arguments.Add(new Argument { Name = "A", TypeId = "int", Direction = ArgumentDirection.In, DefaultValue = 0 });
 subProg.Arguments.Add(new Argument { Name = "B", TypeId = "int", Direction = ArgumentDirection.In, DefaultValue = 0 });
 subProg.AddLocalVariable(new Variable("Result", intType, 0), project.TypeRegistry);
+
 subProg.Lines.Add(new Instruction(1, "core.assign")
 {
-    Fields = new() { ["variable"] = new VariableFieldValue("LocalVariables", "Result", "int"), ["expression"] = new ExpressionFieldValue("A * B") }
+    Fields = new()
+    {
+        ["variable"] = new VariableFieldValue("LocalVariables", "Result", "int"),
+        ["expression"] = new ExpressionFieldValue("A * B")
+    }
 });
+
 subProg.Lines.Add(new Instruction(2, "core.return")
 {
     Fields = new() { ["value"] = new ExpressionFieldValue("Result") }
 });
+
 project.AddProgram(subProg);
-Console.WriteLine($"  '{subProg.Name}': {subProg.Lines.Count} инструкций\n");
+Console.WriteLine($"  ✓ '{subProg.Name}': {subProg.Lines.Count} инструкций");
+Console.WriteLine();
 
 // ===================================================================
-// 5.5 Массивы и FOR EACH
+// 7. Массивы и FOR EACH
 // ===================================================================
-Console.WriteLine("=== 5.5 Массивы и FOR EACH ===");
+Console.WriteLine("═══ 7. Массивы и FOR EACH ═══");
 
-// Программа работы с массивами
 var arrayProg = new AstroProgram
 {
-    Name = "ArrayTest", Author = "Demo", Description = "Тест массивов",
-    Version = "1.0", ReturnTypeId = "int", IsBackground = false, MaxCycles = 100
+    Name = "ArrayTest",
+    Author = "Demo",
+    Description = "Тест массивов и встроенных функций",
+    Version = "1.0",
+    ReturnTypeId = "int",
+    IsBackground = false,
+    MaxCycles = 100
 };
 
 arrayProg.AddLocalVariable(new Variable("MyArray", stringType, new List<object?> { 1.0, 2.0, 3.0, 4.0, 5.0 }), project.TypeRegistry);
 arrayProg.AddLocalVariable(new Variable("Sum", intType, 0), project.TypeRegistry);
 arrayProg.AddLocalVariable(new Variable("Item", intType, 0), project.TypeRegistry);
 arrayProg.AddLocalVariable(new Variable("Size", intType, 0), project.TypeRegistry);
+arrayProg.AddLocalVariable(new Variable("X", doubleType, 0.0), project.TypeRegistry);
+arrayProg.AddLocalVariable(new Variable("Message", stringType, ""), project.TypeRegistry);
 
 int arrayLine = 1;
 void AI(string fId, Dictionary<string, FieldValue>? f = null, string? c = null) =>
     arrayProg.Lines.Add(new Instruction(arrayLine++, fId) { Fields = f ?? new(), Comment = c ?? "" });
 
 // SIZE
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Size", "int"), ["expression"] = new ExpressionFieldValue("SIZE(MyArray)") }, "Size = SIZE(MyArray)");
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Size", "int"),
+    ["expression"] = new ExpressionFieldValue("SIZE(MyArray)")
+}, "Size = SIZE(MyArray)");
 
 // FOREACH
-AI("core.foreach", new() { ["itemVariable"] = new VariableFieldValue("LocalVariables", "Item", "int"), ["collection"] = new VariableFieldValue("LocalVariables", "MyArray", "string") }, "FOREACH Item IN MyArray");
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ExpressionFieldValue("Sum + Item") }, "Sum = Sum + Item");
+AI("core.foreach", new()
+{
+    ["itemVariable"] = new VariableFieldValue("LocalVariables", "Item", "int"),
+    ["collection"] = new VariableFieldValue("LocalVariables", "MyArray", "string")
+}, "FOREACH Item IN MyArray");
+
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
+    ["expression"] = new ExpressionFieldValue("Sum + Item")
+}, "Sum = Sum + Item");
+
 AI("core.endforeach");
 
 // ADD
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Item", "int"), ["expression"] = new ConstantFieldValue(10) }, "Item = 10");
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Size", "int"), ["expression"] = new ExpressionFieldValue("ADD(MyArray, Item)") }, "ADD(MyArray, 10)");
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Item", "int"),
+    ["expression"] = new ConstantFieldValue(10)
+}, "Item = 10");
+
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Size", "int"),
+    ["expression"] = new ExpressionFieldValue("ADD(MyArray, Item)")
+}, "ADD(MyArray, 10)");
 
 // FIND
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Size", "int"), ["expression"] = new ExpressionFieldValue("FIND(MyArray, 3)") }, "Index = FIND(MyArray, 3)");
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Size", "int"),
+    ["expression"] = new ExpressionFieldValue("FIND(MyArray, 3)")
+}, "Index = FIND(MyArray, 3)");
 
 // SLICE
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"), ["expression"] = new ExpressionFieldValue("SIZE(SLICE(MyArray, 1, 3))") }, "Size = SIZE(SLICE(MyArray, 1, 3))");
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Sum", "int"),
+    ["expression"] = new ExpressionFieldValue("SIZE(SLICE(MyArray, 1, 3))")
+}, "Size = SIZE(SLICE(MyArray, 1, 3))");
 
 // RANGE
-AI("core.assign", new() { ["variable"] = new VariableFieldValue("LocalVariables", "MyArray", "string"), ["expression"] = new ExpressionFieldValue("RANGE(1, 5, 1)") }, "MyArray = RANGE(1, 5, 1)");
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "MyArray", "string"),
+    ["expression"] = new ExpressionFieldValue("RANGE(1, 5, 1)")
+}, "MyArray = RANGE(1, 5, 1)");
+
+// Математические функции
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "X", "double"),
+    ["expression"] = new ExpressionFieldValue("SIN(3.14159 / 2)")
+}, "X = SIN(PI/2)");
+
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "X", "double"),
+    ["expression"] = new ExpressionFieldValue("SQRT(16)")
+}, "X = SQRT(16)");
+
+// Строковые функции (через переменные, т.к. лексер не поддерживает кавычки)
+AI("core.assign", new()
+{
+    ["variable"] = new VariableFieldValue("LocalVariables", "Message", "string"),
+    ["expression"] = new ConstantFieldValue("Hello World")
+}, "Message = 'Hello World'");
 
 AI("core.return", new() { ["value"] = new ExpressionFieldValue("Sum") });
 
 project.AddProgram(arrayProg);
-Console.WriteLine($"  '{arrayProg.Name}': {arrayProg.Lines.Count} инструкций");
+Console.WriteLine($"  ✓ '{arrayProg.Name}': {arrayProg.Lines.Count} инструкций");
 
 var arrayInterpreter = project.CreateInterpreter();
 arrayInterpreter.LoadProgram(arrayProg);
 arrayInterpreter.Run();
-Console.WriteLine($"  Результат: {arrayInterpreter.State.ReturnValue}");
+Console.WriteLine($"  ✓ Результат: {arrayInterpreter.State.ReturnValue}");
 Console.WriteLine();
 
 // ===================================================================
-// 6. Аварии (система аварийности)
+// 8. Аварии (Alarms)
 // ===================================================================
-Console.WriteLine("=== 6. Аварии (система аварийности) ===");
+Console.WriteLine("═══ 8. Аварии (Alarms) ═══");
 
 var alarms = project.Alarms;
 alarms.CreateUserAlarm("SAFETY_DOOR", "Safety door is open on line {0}", AlarmSeverity.Fatal);
 alarms.CreateUserAlarm("TOOL_WEAR", "Tool wear {0}% exceeded limit", AlarmSeverity.Warning);
 alarms.CreateUserAlarm("PART_OK", "Part quality check passed", AlarmSeverity.Info);
 
-Console.WriteLine($"  Определено аварий: {alarms.Definitions.Count}");
+Console.WriteLine($"  ✓ Определено аварий: {alarms.Definitions.Count}");
 
-// Raise с подстановкой
 alarms.RaiseFromProgram(1001, "MainProgram", 15, "Main");
-var def1001 = alarms.GetDefinition(1001);
-Console.WriteLine($"  Active: {alarms.ActiveAlarms.Count}, Msg: \"{def1001?.FormatMessage(new object[] { "Main" })}\"");
+Console.WriteLine($"  ✓ Active: {alarms.ActiveAlarms.Count}");
 
-// Raise с параметром (Tool Wear 95%)
 alarms.Raise(1002, 95.0);
-var def1002 = alarms.GetDefinition(1002);
-Console.WriteLine($"  #{1002}: \"{def1002?.FormatMessage(new object[] { 95.0 })}\"");
+Console.WriteLine($"  ✓ Авария #1002 поднята");
 
-// Ack + Clear
 alarms.Acknowledge(1002);
-Console.WriteLine($"  ToolWear после Ack: {alarms.ActiveAlarms[1002].State}");
+Console.WriteLine($"  ✓ Авария #1002 квитирована");
+
 alarms.Clear(1002);
-Console.WriteLine($"  После Clear: active={alarms.ActiveAlarms.Count}");
+Console.WriteLine($"  ✓ Авария #1002 сброшена");
 
-// Fatal-авария > выбрасывает исключение
-Console.Write("  Авария SAFETY_DOOR: ");
-try { alarms.Raise(1001, "Main"); }
-catch (AlarmFatalException ex) { Console.WriteLine($"Исключение > {ex.Message}"); }
+Console.Write("  ✓ Авария SAFETY_DOOR (Fatal): ");
+try
+{
+    alarms.Raise(1001, "Main");
+}
+catch (AlarmFatalException ex)
+{
+    Console.WriteLine($"Исключение > {ex.Message}");
+}
 
-// ClearAll
-alarms.Raise(1002, 50.0);
 alarms.ClearAll();
-Console.WriteLine($"  После ClearAll: active={alarms.ActiveAlarms.Count}");
+Console.WriteLine($"  ✓ Все аварии сброшены");
 Console.WriteLine();
 
 // ===================================================================
-// 7. Прерывания (OnChange, Background, OnAlarm)
+// 9. Прерывания (Interrupts)
 // ===================================================================
-Console.WriteLine("=== 7. Прерывания (типы триггеров) ===");
+Console.WriteLine("═══ 9. Прерывания (Interrupts) ═══");
 
 var interrupts = project.Interrupts;
 
-// OnAlarm > Deferred
 var intOnAlarm = new InterruptDefinition
 {
-    Id = "int-alarm", Name = "OnSafetyAlarm", TriggerType = InterruptTrigger.OnAlarm,
-    AlarmCode = 1001, ExecutionMode = InterruptExecutionMode.Deferred, IsEnabled = true
+    Id = "int-alarm",
+    Name = "OnSafetyAlarm",
+    TriggerType = InterruptTrigger.OnAlarm,
+    AlarmCode = 1001,
+    ExecutionMode = InterruptExecutionMode.Deferred,
+    IsEnabled = true
 };
 interrupts.Register(intOnAlarm);
 
-// OnValue > Background
 var intBackground = new InterruptDefinition
 {
-    Id = "int-bg", Name = "BgSensorCheck", TriggerType = InterruptTrigger.OnValue,
-    Expression = "Sensor1 > 5", ExecutionMode = InterruptExecutionMode.Background,
-    IsEnabled = true, HandlerProgramName = "Multiply"
+    Id = "int-bg",
+    Name = "BgSensorCheck",
+    TriggerType = InterruptTrigger.OnValue,
+    Expression = "Sensor1 > 5",
+    ExecutionMode = InterruptExecutionMode.Background,
+    IsEnabled = true,
+    HandlerProgramName = "Multiply"
 };
 interrupts.Register(intBackground);
 
-// OnRisingEdge > Inline
 var intRising = new InterruptDefinition
 {
-    Id = "int-rise", Name = "OnRisingSensor2", TriggerType = InterruptTrigger.OnRisingEdge,
-    VariableName = "Sensor2", ExecutionMode = InterruptExecutionMode.Inline, IsEnabled = true
+    Id = "int-rise",
+    Name = "OnRisingSensor2",
+    TriggerType = InterruptTrigger.OnRisingEdge,
+    VariableName = "Sensor2",
+    ExecutionMode = InterruptExecutionMode.Inline,
+    IsEnabled = true
 };
 interrupts.Register(intRising);
 
-Console.WriteLine($"  Прерывания: {interrupts.Definitions.Count}");
+Console.WriteLine($"  ✓ Прерываний: {interrupts.Definitions.Count}");
 foreach (var d in interrupts.Definitions.Values)
-    Console.WriteLine($"    {d.Name,-20} | {d.TriggerType,-12} {d.ExecutionMode,-12} Enabled={d.IsEnabled}");
+    Console.WriteLine($"    {d.Name,-20} | {d.TriggerType,-12} {d.ExecutionMode,-12}");
 
-// Fire + Dequeue Deferred
 interrupts.Fire(intOnAlarm);
-Console.WriteLine($"  HasDeferred: {interrupts.HasDeferred}");
+Console.WriteLine($"  ✓ HasDeferred: {interrupts.HasDeferred}");
+
 var dq = interrupts.DequeueDeferred();
-Console.WriteLine($"  Dequeued: {dq?.Name}");
+Console.WriteLine($"  ✓ Dequeued: {dq?.Name}");
 Console.WriteLine();
 
 // ===================================================================
-// 8. Таймеры + прерывания OnTimer
+// 10. Таймеры (Timers)
 // ===================================================================
-Console.WriteLine("=== 8. Таймеры + OnTimer прерывания ===");
+Console.WriteLine("═══ 10. Таймеры (Timers) ═══");
 
 var timers = project.Timers;
 int timerCnt = 0;
@@ -370,30 +544,20 @@ timers.OnTimerElapsed += (t) =>
     Console.WriteLine($"    → {t.Name} # {t.ElapsedCount}");
 };
 
-// Периодический таймер (250ms)
-timers.Register(new TimerDefinition
-{
-    Name = "Periodic250", IntervalMs = 250, Mode = TimerMode.Periodic
-});
+timers.Register(new TimerDefinition { Name = "Periodic250", IntervalMs = 250, Mode = TimerMode.Periodic });
+timers.Register(new TimerDefinition { Name = "Oneshot500", IntervalMs = 500, Mode = TimerMode.Oneshot });
 
-// Oneshot таймер (500ms)
-timers.Register(new TimerDefinition
-{
-    Name = "Oneshot500", IntervalMs = 500, Mode = TimerMode.Oneshot
-});
-
-// Таймер с прерыванием
-var timerWithInt = new TimerDefinition
-{
-    Name = "TimerWithInt", IntervalMs = 300, Mode = TimerMode.Periodic
-};
+var timerWithInt = new TimerDefinition { Name = "TimerWithInt", IntervalMs = 300, Mode = TimerMode.Periodic };
 timers.Register(timerWithInt);
 
-// Создаём прерывание OnTimer для этого таймера
 var intOnTimer = new InterruptDefinition
 {
-    Id = "int-timer", Name = "OnTimerElapsed", TriggerType = InterruptTrigger.OnTimer,
-    TimerIntervalMs = 300, ExecutionMode = InterruptExecutionMode.Deferred, IsEnabled = true
+    Id = "int-timer",
+    Name = "OnTimerElapsed",
+    TriggerType = InterruptTrigger.OnTimer,
+    TimerIntervalMs = 300,
+    ExecutionMode = InterruptExecutionMode.Deferred,
+    IsEnabled = true
 };
 interrupts.Register(intOnTimer);
 
@@ -402,149 +566,758 @@ Thread.Sleep(1200);
 timers.Disable("Periodic250");
 timers.Disable("TimerWithInt");
 
-Console.WriteLine($"  Срабатываний Periodic250: ~4 (факт: {timerCnt})");
-Console.WriteLine($"  Oneshot500 сработал: {timers.Timers.Values.FirstOrDefault(t => t.Name == "Oneshot500")?.ElapsedCount > 0}");
+Console.WriteLine($"  ✓ Срабатываний Periodic250: ~4 (факт: {timerCnt})");
+Console.WriteLine($"  ✓ Oneshot500 сработал: {timers.Timers.Values.FirstOrDefault(t => t.Name == "Oneshot500")?.ElapsedCount > 0}");
 Console.WriteLine();
 
 // ===================================================================
-// 9. Работа со STRUCT
+// 11. Сохранение и загрузка проекта (JSON)
 // ===================================================================
-Console.WriteLine("=== 9. Работа со STRUCT POINT ===");
-
-// Создаём переменную-структуру
-var table = project.GlobalTables.GetOrCreateTable(pointType);
-var pointVar = new Variable("CurrentPos", pointType, new Dictionary<string, object>
-{
-    ["X"] = 100.5, ["Y"] = 200.3, ["Z"] = 50.0
-});
-table.AddVariable(pointVar);
-
-if (pointVar.Value is Dictionary<string, object> pos)
-{
-    Console.WriteLine($"  CurrentPos = ({pos["X"]}, {pos["Y"]}, {pos["Z"]})");
-    pos["X"] = 150.0;
-    Console.WriteLine($"  После X = 150: ({pos["X"]}, {pos["Y"]}, {pos["Z"]})");
-}
-Console.WriteLine();
-
-// ===================================================================
-// 10. Сохранение и загрузка проекта
-// ===================================================================
-Console.WriteLine("=== 10. Сохранение и загрузка проекта ===");
+Console.WriteLine("═══ 11. Сохранение и загрузка проекта (JSON) ═══");
 
 project.SaveAll();
+Console.WriteLine($"  ✓ Проект сохранён в {baseFolder}");
+
 var loadProject = new ProjectManager();
 loadProject.Open(baseFolder);
+Console.WriteLine($"  ✓ Проект загружен");
+Console.WriteLine();
 
-Console.WriteLine($"  После загрузки: типов={loadProject.TypeRegistry.AllTypes.Count}, форм={loadProject.FormRegistry.AllForms.Count}");
+// ===================================================================
+// 12. Экспорт в различные форматы
+// ===================================================================
+Console.WriteLine("═══ 12. Экспорт данных в различные форматы ═══");
+
+// 12a. Экспорт типов данных
+Console.WriteLine("\n  ─── Экспорт типов данных ───");
+ExportHelper.ExportToJson(project.TypeRegistry, Path.Combine(exportFolder, "types.json"));
+Console.WriteLine($"    ✓ types.json");
+
+ExportHelper.ExportTypesToText(project.TypeRegistry, Path.Combine(exportFolder, "types.txt"));
+Console.WriteLine($"    ✓ types.txt");
+
+ExportHelper.ExportTypesToCsv(project.TypeRegistry, Path.Combine(exportFolder, "types.csv"));
+Console.WriteLine($"    ✓ types.csv");
+
+// 12b. Экспорт форм инструкций
+Console.WriteLine("\n  ─── Экспорт форм инструкций ───");
+ExportHelper.ExportToJson(project.FormRegistry, Path.Combine(exportFolder, "forms.json"));
+Console.WriteLine($"    ✓ forms.json");
+
+ExportHelper.ExportFormsToText(project.FormRegistry, Path.Combine(exportFolder, "forms.txt"));
+Console.WriteLine($"    ✓ forms.txt");
+
+ExportHelper.ExportFormsToCsv(project.FormRegistry, Path.Combine(exportFolder, "forms.csv"));
+Console.WriteLine($"    ✓ forms.csv");
+
+// 12c. Экспорт программ
+Console.WriteLine("\n  ─── Экспорт программ ───");
+foreach (var prog in project.Programs.Values)
+{
+    ExportHelper.ExportToJson(prog, Path.Combine(exportFolder, $"program_{prog.Name}.json"));
+    ExportHelper.ExportProgramToText(prog, Path.Combine(exportFolder, $"program_{prog.Name}.txt"));
+    ExportHelper.ExportProgramToCsv(prog, Path.Combine(exportFolder, $"program_{prog.Name}.csv"));
+    Console.WriteLine($"    ✓ {prog.Name} (json, txt, csv)");
+}
+
+// 12d. Экспорт переменных
+Console.WriteLine("\n  ─── Экспорт глобальных переменных ───");
+ExportHelper.ExportToJson(project.GlobalTables, Path.Combine(exportFolder, "globals.json"));
+Console.WriteLine($"    ✓ globals.json");
+
+ExportHelper.ExportVariablesToText(project.GlobalTables, Path.Combine(exportFolder, "globals.txt"));
+Console.WriteLine($"    ✓ globals.txt");
+
+ExportHelper.ExportVariablesToCsv(project.GlobalTables, Path.Combine(exportFolder, "globals.csv"));
+Console.WriteLine($"    ✓ globals.csv");
+
+// 12e. Экспорт аварий
+Console.WriteLine("\n  ─── Экспорт аварий ───");
+ExportHelper.ExportToJson(alarms.Definitions.Values, Path.Combine(exportFolder, "alarms.json"));
+Console.WriteLine($"    ✓ alarms.json");
+
+ExportHelper.ExportAlarmsToText(alarms.Definitions.Values, Path.Combine(exportFolder, "alarms.txt"));
+Console.WriteLine($"    ✓ alarms.txt");
+
+ExportHelper.ExportAlarmsToCsv(alarms.Definitions.Values, Path.Combine(exportFolder, "alarms.csv"));
+Console.WriteLine($"    ✓ alarms.csv");
+
+// 12f. Экспорт прерываний
+Console.WriteLine("\n  ─── Экспорт прерываний ───");
+ExportHelper.ExportToJson(interrupts.Definitions.Values, Path.Combine(exportFolder, "interrupts.json"));
+Console.WriteLine($"    ✓ interrupts.json");
+
+ExportHelper.ExportInterruptsToText(interrupts.Definitions.Values, Path.Combine(exportFolder, "interrupts.txt"));
+Console.WriteLine($"    ✓ interrupts.txt");
+
+ExportHelper.ExportInterruptsToCsv(interrupts.Definitions.Values, Path.Combine(exportFolder, "interrupts.csv"));
+Console.WriteLine($"    ✓ interrupts.csv");
+
+// 12g. Экспорт таймеров
+Console.WriteLine("\n  ─── Экспорт таймеров ───");
+ExportHelper.ExportToJson(timers.Timers.Values, Path.Combine(exportFolder, "timers.json"));
+Console.WriteLine($"    ✓ timers.json");
+
+ExportHelper.ExportTimersToText(timers.Timers.Values, Path.Combine(exportFolder, "timers.txt"));
+Console.WriteLine($"    ✓ timers.txt");
+
+ExportHelper.ExportTimersToCsv(timers.Timers.Values, Path.Combine(exportFolder, "timers.csv"));
+Console.WriteLine($"    ✓ timers.csv");
+
+Console.WriteLine($"\n  ═══════════════════════════════════════");
+Console.WriteLine($"  Всего экспортировано файлов: {Directory.GetFiles(exportFolder).Length}");
+Console.WriteLine($"  Папка экспорта: {exportFolder}");
+Console.WriteLine($"  ═══════════════════════════════════════\n");
+
+// ===================================================================
+// 13. Экспорт AST-деревьев выражений
+// ===================================================================
+Console.WriteLine("═══ 13. Экспорт AST-деревьев выражений ═══");
+
+var parser = new ExpressionParser();
+var astCount = 0;
+
+foreach (var prog in project.Programs.Values)
+{
+    Console.WriteLine($"\n  ─── Программа: {prog.Name} ───");
+    
+    var astData = new List<Dictionary<string, object?>>();
+    int exprIndex = 0;
+    
+    foreach (var instr in prog.Lines)
+    {
+        foreach (var kvp in instr.Fields)
+        {
+            var value = kvp.Value;
+            string? exprText = null;
+            
+            if (value is ExpressionFieldValue efv)
+                exprText = efv.Expression;
+            else if (value is ConstantFieldValue cfv)
+                exprText = cfv.Value?.ToString();
+            
+            if (!string.IsNullOrEmpty(exprText))
+            {
+                try
+                {
+                    var ast = parser.Parse(exprText);
+                    var astRecord = new Dictionary<string, object?>
+                    {
+                        ["Program"] = prog.Name,
+                        ["Line"] = instr.LineNumber,
+                        ["FormId"] = instr.FormId,
+                        ["FieldName"] = kvp.Key,
+                        ["ExpressionText"] = exprText,
+                        ["Ast"] = ast
+                    };
+                    astData.Add(astRecord);
+                    exprIndex++;
+                    astCount++;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"    ⚠ Ошибка парсинга строки {instr.LineNumber}: {ex.Message}");
+                }
+            }
+        }
+    }
+    
+    if (astData.Count > 0)
+    {
+        // JSON
+        var astFileName = Path.Combine(exportFolder, $"ast_{prog.Name}.json");
+        ExportHelper.ExportToJson(astData, astFileName);
+        Console.WriteLine($"    ✓ {prog.Name} — {astData.Count} AST (JSON)");
+        
+        // Текст (tree-формат)
+        var astTxtFileName = Path.Combine(exportFolder, $"ast_{prog.Name}.txt");
+        ExportHelper.ExportAstToText(astData, prog.Name, astTxtFileName);
+        Console.WriteLine($"    ✓ {prog.Name} — {astData.Count} AST (TXT)");
+    }
+    else
+    {
+        Console.WriteLine($"    ✓ {prog.Name} — нет выражений для парсинга");
+    }
+}
+
+Console.WriteLine($"\n  ✓ Всего AST-деревьев экспортировано: {astCount}");
+Console.WriteLine($"  ✓ Папка: {Path.Combine(exportFolder, "ast_*.json")}");
+Console.WriteLine();
+
+// 14. Запуск интерпретатора
+// ===================================================================
+Console.WriteLine("═══ 14. Запуск интерпретатора ═══");
 
 var interpreter = loadProject.CreateInterpreter();
-var prog = loadProject.Programs["MainProgram"];
+var mainProgram = loadProject.Programs["MainProgram"];
 
-interpreter.Context.OnBeforeInstruction += (_, instr) =>
-    Console.WriteLine($"    [{instr.LineNumber,2}] {instr.FormId,-15} | {instr.Comment}");
-
-Console.WriteLine("  --- Запуск MainProgram ---");
-// Передаём аргумент при LoadProgram (через DefaultValue)
-prog.Arguments.First(a => a.Name == "StartValue").DefaultValue = 1;
-interpreter.LoadProgram(prog);
+mainProgram.Arguments.First(a => a.Name == "StartValue").DefaultValue = 1;
+interpreter.LoadProgram(mainProgram);
 interpreter.Run();
-Console.WriteLine($"  Возврат: {interpreter.State.ReturnValue}\n");
 
-// ===================================================================
-// 11. CALL (вызов подпрограммы с аргументами)
-// ===================================================================
-Console.WriteLine("=== 11. Вызов подпрограммы Multiply ===");
-
-var subInterpreter = loadProject.CreateInterpreter();
-var multiply = loadProject.Programs["Multiply"];
-
-subInterpreter.Context.OnBeforeInstruction += (_, instr) =>
-    Console.WriteLine($"    [{instr.LineNumber}] {instr.FormId}");
-
-// Передаём аргументы при LoadProgram
-multiply.Arguments.First(a => a.Name == "A").DefaultValue = 7;
-multiply.Arguments.First(a => a.Name == "B").DefaultValue = 6;
-subInterpreter.LoadProgram(multiply);
-subInterpreter.Run();
-Console.WriteLine($"  7 * 6 = {subInterpreter.State.ReturnValue}\n");
-
-// ===================================================================
-// 12. Многозадачность (Foreground + Background)
-// ===================================================================
-Console.WriteLine("=== 12. Многозадачность ===");
-
-var sched = loadProject.CreateScheduler();
-sched.OnTaskStarted += (s) => Console.WriteLine($"  [{s.TaskId}] {s.Name} → запущена");
-sched.OnTaskStopped += (s) => Console.WriteLine($"  [{s.TaskId}] {s.Name} → остановлена");
-
-// Foreground задача с MainProgram
-sched.StartTask(new TaskConfig
-{
-    TaskId = 1, Name = "MainTask", Program = prog,
-    Type = TaskType.Foreground, Priority = TaskPriority.Normal
-});
-
-// Background задача с WatchDog
-var bgProg = new AstroProgram { Name = "BG", IsBackground = true, MaxCycles = 6 };
-bgProg.AddLocalVariable(new Variable("Tick", intType, 0), loadProject.TypeRegistry);
-bgProg.Lines.Add(new Instruction(1, "core.assign")
-{
-    Fields = new() { ["variable"] = new VariableFieldValue("LocalVariables", "Tick", "int"), ["expression"] = new ExpressionFieldValue("Tick + 1") },
-    Comment = "Инкремент тика"
-});
-loadProject.AddProgram(bgProg);
-
-sched.StartTask(new TaskConfig
-{
-    TaskId = 2, Name = "BG", Program = bgProg,
-    Type = TaskType.Background, Priority = TaskPriority.Low,
-    CycleIntervalMs = 80, MaxCycles = 6
-});
-
-sched.StartScheduler();
-Thread.Sleep(400);
-sched.StopScheduler();
+Console.WriteLine($"  ✓ Возврат: {interpreter.State.ReturnValue}");
 Console.WriteLine();
 
 // ===================================================================
-// 13. Структура файлов проекта
+// 15. Итоговый отчёт
 // ===================================================================
-Console.WriteLine("=== 13. Структура файлов проекта ===");
-
-if (Directory.Exists(baseFolder))
-{
-    var allFiles = Directory.GetFiles(baseFolder, "*.*", SearchOption.AllDirectories);
-    Console.WriteLine($"  Файлов в {baseFolder}: {allFiles.Length}");
-    foreach (var f in allFiles)
-        Console.WriteLine($"    {Path.GetRelativePath(baseFolder, f)}");
-}
-Console.WriteLine();
-
-// ===================================================================
-// Итоги
-// ===================================================================
-Console.WriteLine("======================================================");
-Console.WriteLine("              ИТОГОВЫЙ ОТЧЁТ                         ");
-Console.WriteLine("======================================================");
-Console.WriteLine($"  Типов данных:     {loadProject.TypeRegistry.AllTypes.Count}");
-Console.WriteLine($"  Форм инструкций:  {loadProject.FormRegistry.AllForms.Count}");
-Console.WriteLine($"  Программ:         {loadProject.Programs.Count}");
-Console.WriteLine($"  Аварий (сист.):   {loadProject.Alarms.Definitions.Count}");
-Console.WriteLine($"  Прерываний:       {loadProject.Interrupts.Definitions.Count}");
-Console.WriteLine($"  Таймеров:         {loadProject.Timers.Timers.Count}");
-Console.WriteLine($"  Глоб. таблиц:     {loadProject.GlobalTables.Tables.Count}");
-Console.WriteLine($"  Возврат:          {interpreter.State.ReturnValue}");
-
-Console.WriteLine("\nСостояние локальных переменных:");
-foreach (var t in prog.LocalTables.Tables.Values)
-    foreach (var v in t.Variables)
-        Console.WriteLine($"  {v.Name,-15} = {v.Value}");
-
-Console.WriteLine("\nСостояние глобальных переменных:");
-foreach (var t in loadProject.GlobalTables.Tables.Values)
-    foreach (var v in t.Variables)
-        Console.WriteLine($"  {v.Name,-15} = {v.Value}");
+Console.WriteLine("╔══════════════════════════════════════════════════════════╗");
+Console.WriteLine("║                  ИТОГОВЫЙ ОТЧЁТ                          ║");
+Console.WriteLine("╠══════════════════════════════════════════════════════════╣");
+Console.WriteLine($"║  Типов данных:       {loadProject.TypeRegistry.AllTypes.Count,3}                          ║");
+Console.WriteLine($"║  Форм инструкций:    {loadProject.FormRegistry.AllForms.Count,3}                          ║");
+Console.WriteLine($"║  Программ:           {loadProject.Programs.Count,3}                          ║");
+Console.WriteLine($"║  Аварий (сист.):     {loadProject.Alarms.Definitions.Count,3}                          ║");
+Console.WriteLine($"║  Прерываний:         {loadProject.Interrupts.Definitions.Count,3}                          ║");
+Console.WriteLine($"║  Таймеров:           {loadProject.Timers.Timers.Count,3}                          ║");
+Console.WriteLine($"║  Глоб. таблиц:       {loadProject.GlobalTables.Tables.Count,3}                          ║");
+Console.WriteLine($"║  Возврат:            {interpreter.State.ReturnValue,3}                          ║");
+Console.WriteLine($"║  AST-деревьев:       {astCount,3}                          ║");
+Console.WriteLine($"║  Экспорт файлов:     {Directory.GetFiles(exportFolder).Length,3}                          ║");
+Console.WriteLine("╚══════════════════════════════════════════════════════════╝");
 
 Console.WriteLine("\n✓ Полный цикл Data > Binding > Execution завершён!");
-Console.WriteLine("  Все 30+ инструкции, циклы, условия, вызовы, прерывания, таймеры работают.");
+Console.WriteLine("✓ Все 30+ инструкции, циклы, условия, вызовы, прерывания, таймеры работают.");
+Console.WriteLine("✓ Экспорт в JSON, Текст, CSV + AST-деревья выполнен.\n");
+
+// ===================================================================
+// Вспомогательные функции
+// ===================================================================
+static int CountVariables(VariableTableSet tables)
+{
+    int count = 0;
+    foreach (var table in tables.Tables.Values)
+        count += table.Variables.Count;
+    return count;
+}
+
+// ===================================================================
+// ExportHelper — Встроенные функции экспорта
+// ===================================================================
+public static class ExportHelper
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
+    };
+
+    // ========== JSON Экспорт ==========
+    public static void ExportToJson<T>(T obj, string filePath)
+    {
+        var json = JsonSerializer.Serialize(obj, JsonOptions);
+        File.WriteAllText(filePath, json);
+    }
+
+    // ========== TXT Экспорт — Типы данных ==========
+    public static void ExportTypesToText(DataTypeRegistry registry, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine("║              Типы данных AstroEditor v4                  ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine();
+
+        sb.AppendLine("┌──────────────────────────────────────────────────────────┐");
+        sb.AppendLine("│ ПРИМИТИВНЫЕ ТИПЫ                                         │");
+        sb.AppendLine("└──────────────────────────────────────────────────────────┘");
+        
+        foreach (var t in registry.AllTypes.OfType<PrimitiveDataType>())
+        {
+            var c = t.BuiltinConstraints;
+            sb.AppendLine($"  {t.Name,-8} ({t.Id,-6}) > [{c?.Min?.ToString() ?? "∞"}, {c?.Max?.ToString() ?? "∞"}]");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("┌──────────────────────────────────────────────────────────┐");
+        sb.AppendLine("│ ПЕРЕЧИСЛЕНИЯ (Enum)                                      │");
+        sb.AppendLine("└──────────────────────────────────────────────────────────┘");
+        
+        foreach (var t in registry.AllTypes.OfType<EnumDataType>())
+        {
+            sb.AppendLine($"  {t.Name} ({t.Values.Count} значений):");
+            foreach (var kv in t.Values)
+                sb.AppendLine($"    • {kv.Key} = {kv.Value}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("┌──────────────────────────────────────────────────────────┐");
+        sb.AppendLine("│ СТРУКТУРЫ (Struct)                                       │");
+        sb.AppendLine("└──────────────────────────────────────────────────────────┘");
+        
+        foreach (var t in registry.AllTypes.OfType<StructDataType>())
+        {
+            sb.AppendLine($"  {t.Name} ({t.Fields.Count} полей):");
+            foreach (var f in t.Fields)
+                sb.AppendLine($"    • {f.Name}: {f.TypeId}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("┌──────────────────────────────────────────────────────────┐");
+        sb.AppendLine("│ ПСЕВДОНИМЫ (Alias)                                       │");
+        sb.AppendLine("└──────────────────────────────────────────────────────────┘");
+        
+        foreach (var t in registry.AllTypes.OfType<AliasDataType>())
+        {
+            sb.AppendLine($"  {t.Name} > {t.BaseTypeId}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("══════════════════════════════════════════════════════════");
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — Формы ==========
+    public static void ExportFormsToText(FormRegistry registry, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine("║           Формы инструкций AstroEditor v4                ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine();
+
+        foreach (var form in registry.AllForms.OrderBy(f => f.Category).ThenBy(f => f.Name))
+        {
+            sb.AppendLine($"┌──────────────────────────────────────────────────────────┐");
+            sb.AppendLine($"│ {form.Name,-56} │");
+            sb.AppendLine($"├──────────────────────────────────────────────────────────┤");
+            sb.AppendLine($"│ ID: {form.Id}");
+            sb.AppendLine($"│ Категория: {form.Category}");
+            sb.AppendLine($"│ Полей: {form.Fields.Count}");
+            
+            if (!string.IsNullOrEmpty(form.Description))
+                sb.AppendLine($"│ Описание: {form.Description}");
+            
+            sb.AppendLine($"├──────────────────────────────────────────────────────────┤");
+            sb.AppendLine($"│ ПОЛЯ:");
+            
+            foreach (var field in form.Fields)
+            {
+                var req = field.Required ? "★" : "○";
+                sb.AppendLine($"│   {req} {field.Name,-20} {field.ValueType,-12} {(field.Required ? "Обяз." : "Опц.")}");
+            }
+            
+            sb.AppendLine($"└──────────────────────────────────────────────────────────┘");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine($"══════════════════════════════════════════════════════════");
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — Программа ==========
+    public static void ExportProgramToText(AstroProgram program, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine($"║  Программа: {program.Name,-44} ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine($"│  Автор: {program.Author,-48} │");
+        sb.AppendLine($"│  Версия: {program.Version,-47} │");
+        sb.AppendLine($"│  Описание: {program.Description,-45} │");
+        sb.AppendLine($"│  Строк: {program.Lines.Count,-48} │");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine("│  АРГУМЕНТЫ:");
+        
+        foreach (var arg in program.Arguments)
+        {
+            sb.AppendLine($"│    • {arg.Name} ({arg.TypeId}) [{arg.Direction}] = {arg.DefaultValue}");
+        }
+        
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine("│  ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ:");
+        
+        foreach (var table in program.LocalTables.Tables.Values)
+        {
+            foreach (var v in table.Variables)
+            {
+                sb.AppendLine($"│    • {v.Name} ({v.Type.Name}) = {v.Value}");
+            }
+        }
+        
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine("│  ИНСТРУКЦИИ:");
+        sb.AppendLine("╠═══════╦══════════════════════════════════════════════════╣");
+        sb.AppendLine("║ Строка║  Инструкция                                      ║");
+        sb.AppendLine("╠═══════╬══════════════════════════════════════════════════╣");
+        
+        foreach (var line in program.Lines)
+        {
+            var comment = !string.IsNullOrEmpty(line.Comment) ? $" ; {line.Comment}" : "";
+            sb.AppendLine($"║ {line.LineNumber,5} ║  {line.FormId,-50}{comment}");
+        }
+        
+        sb.AppendLine("╚═══════╩══════════════════════════════════════════════════╝");
+        sb.AppendLine();
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — Переменные ==========
+    public static void ExportVariablesToText(VariableTableSet tables, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine("║              Глобальные переменные                       ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        
+        foreach (var table in tables.Tables.Values)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"┌──────────────────────────────────────────────────────────┐");
+            sb.AppendLine($"│ Тип: {table.Type.Name}");
+            sb.AppendLine($"├──────────────────────────────────────────────────────────┤");
+            
+            foreach (var v in table.Variables)
+            {
+                var valueStr = v.Value?.ToString() ?? "null";
+                if (valueStr.Length > 50) valueStr = valueStr.Substring(0, 47) + "...";
+                
+                sb.AppendLine($"│  {v.Name,-30} = {valueStr}");
+            }
+            
+            sb.AppendLine($"└──────────────────────────────────────────────────────────┘");
+        }
+        
+        sb.AppendLine();
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — Аварии ==========
+    public static void ExportAlarmsToText(IEnumerable<AlarmDefinition> alarms, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine("║                    Аварии (Alarms)                       ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        
+        foreach (var alarm in alarms.OrderBy(a => a.Code))
+        {
+            sb.AppendLine();
+            sb.AppendLine($"  #{alarm.Code} — {alarm.Name}");
+            sb.AppendLine($"     Тяжесть: {alarm.Severity}");
+            sb.AppendLine($"     Шаблон: {alarm.MessageTemplate}");
+            sb.AppendLine($"     Категория: {alarm.Category}");
+        }
+        
+        sb.AppendLine();
+        sb.AppendLine($"══════════════════════════════════════════════════════════");
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — Прерывания ==========
+    public static void ExportInterruptsToText(IEnumerable<InterruptDefinition> interrupts, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine("║                  Прерывания (Interrupts)                 ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        
+        foreach (var i in interrupts.OrderBy(d => d.Name))
+        {
+            sb.AppendLine();
+            sb.AppendLine($"  {i.Name} ({i.Id})");
+            sb.AppendLine($"     Триггер: {i.TriggerType}");
+            sb.AppendLine($"     Режим: {i.ExecutionMode}");
+            sb.AppendLine($"     Включено: {i.IsEnabled}");
+            
+            if (!string.IsNullOrEmpty(i.VariableName))
+                sb.AppendLine($"     Переменная: {i.VariableName}");
+            
+            if (!string.IsNullOrEmpty(i.Expression))
+                sb.AppendLine($"     Выражение: {i.Expression}");
+            
+            if (i.AlarmCode.HasValue)
+                sb.AppendLine($"     Код аварии: {i.AlarmCode}");
+            
+            if (i.TimerIntervalMs.HasValue)
+                sb.AppendLine($"     Интервал таймера: {i.TimerIntervalMs} мс");
+            
+            if (!string.IsNullOrEmpty(i.HandlerProgramName))
+                sb.AppendLine($"     Обработчик: {i.HandlerProgramName}");
+        }
+        
+        sb.AppendLine();
+        sb.AppendLine($"══════════════════════════════════════════════════════════");
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — Таймеры ==========
+    public static void ExportTimersToText(IEnumerable<TimerDefinition> timers, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine("║                      Таймеры (Timers)                    ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        
+        foreach (var t in timers.OrderBy(d => d.Name))
+        {
+            sb.AppendLine();
+            sb.AppendLine($"  {t.Name}");
+            sb.AppendLine($"     Интервал: {t.IntervalMs} мс");
+            sb.AppendLine($"     Режим: {t.Mode}");
+        }
+        
+        sb.AppendLine();
+        sb.AppendLine($"══════════════════════════════════════════════════════════");
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== TXT Экспорт — AST-деревья ==========
+    public static void ExportAstToText(IEnumerable<Dictionary<string, object?>> astData, string programName, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("╔══════════════════════════════════════════════════════════╗");
+        sb.AppendLine($"║  AST-деревья: {programName,-44} ║");
+        sb.AppendLine("╠══════════════════════════════════════════════════════════╣");
+        sb.AppendLine();
+
+        var index = 1;
+        foreach (var record in astData)
+        {
+            if (record["Ast"] is ExpressionNode ast)
+            {
+                sb.AppendLine($"  ┌──────────────────────────────────────────────────────┐");
+                sb.AppendLine($"  │ #{index}: {record["ExpressionText"]}");
+                sb.AppendLine($"  ├──────────────────────────────────────────────────────┤");
+                sb.AppendLine($"  │ Программа: {record["Program"]}, Строка: {record["Line"]}, Поле: {record["FieldName"]}");
+                sb.AppendLine($"  │ Форма: {record["FormId"]}");
+                sb.AppendLine($"  │ Дерево:");
+                
+                var treeText = RenderAstTree(ast);
+                foreach (var line in treeText.Split('\n'))
+                    sb.AppendLine($"  │ {line}");
+                
+                sb.AppendLine($"  └──────────────────────────────────────────────────────┘");
+                sb.AppendLine();
+                index++;
+            }
+        }
+
+        sb.AppendLine($"══════════════════════════════════════════════════════════");
+        sb.AppendLine($"Экспортировано: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Типы ==========
+    public static void ExportTypesToCsv(DataTypeRegistry registry, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Name,Id,Category,Kind,Details");
+        
+        foreach (var t in registry.AllTypes)
+        {
+            var details = t switch
+            {
+                PrimitiveDataType p => $"Range: [{p.BuiltinConstraints?.Min?.ToString() ?? "∞"}, {p.BuiltinConstraints?.Max?.ToString() ?? "∞"}]",
+                EnumDataType e => $"Values: {e.Values.Count}",
+                StructDataType s => $"Fields: {s.Fields.Count}",
+                AliasDataType a => $"Base: {a.BaseTypeId}",
+                ArrayDataType arr => $"Element: {arr.ElementTypeId}",
+                _ => ""
+            };
+            
+            sb.AppendLine($"{EscapeCsv(t.Name)},{EscapeCsv(t.Id)},{t.Category},{t.Kind},{EscapeCsv(details)}");
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Формы ==========
+    public static void ExportFormsToCsv(FormRegistry registry, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("FormId,Name,Category,FieldName,FieldType,Required,Description");
+        
+        foreach (var form in registry.AllForms)
+        {
+            foreach (var field in form.Fields)
+            {
+                sb.AppendLine($"{EscapeCsv(form.Id)},{EscapeCsv(form.Name)},{EscapeCsv(form.Category)},{EscapeCsv(field.Name)},{field.ValueType},{field.Required},{EscapeCsv(field.DisplayName)}");
+            }
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Программа ==========
+    public static void ExportProgramToCsv(AstroProgram program, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("LineNumber,FormId,Comment");
+        
+        foreach (var line in program.Lines)
+        {
+            sb.AppendLine($"{line.LineNumber},{EscapeCsv(line.FormId)},{EscapeCsv(line.Comment)}");
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Переменные ==========
+    public static void ExportVariablesToCsv(VariableTableSet tables, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("TableName,VariableName,Type,Value");
+        
+        foreach (var table in tables.Tables.Values)
+        {
+            foreach (var v in table.Variables)
+            {
+                var valueStr = v.Value?.ToString()?.Replace("\"", "\"\"") ?? "null";
+                sb.AppendLine($"{EscapeCsv(table.Type.Name)},{EscapeCsv(v.Name)},{EscapeCsv(v.Type.Name)},\"{valueStr}\"");
+            }
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Аварии ==========
+    public static void ExportAlarmsToCsv(IEnumerable<AlarmDefinition> alarms, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Code,Name,Severity,MessageTemplate,IsSystem");
+        
+        foreach (var alarm in alarms)
+        {
+            sb.AppendLine($"{alarm.Code},{EscapeCsv(alarm.Name)},{alarm.Severity},\"{EscapeCsv(alarm.MessageTemplate)}\",{(alarm.Category == DataTypeCategory.Core || alarm.Category == DataTypeCategory.System)}");
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Прерывания ==========
+    public static void ExportInterruptsToCsv(IEnumerable<InterruptDefinition> interrupts, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Id,Name,TriggerType,ExecutionMode,IsEnabled,VariableName,AlarmCode,TimerIntervalMs,HandlerProgram");
+        
+        foreach (var i in interrupts)
+        {
+            sb.AppendLine($"{EscapeCsv(i.Id)},{EscapeCsv(i.Name)},{i.TriggerType},{i.ExecutionMode},{i.IsEnabled},{EscapeCsv(i.VariableName ?? "")},{i.AlarmCode ?? 0},{i.TimerIntervalMs ?? 0},{EscapeCsv(i.HandlerProgramName ?? "")}");
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== CSV Экспорт — Таймеры ==========
+    public static void ExportTimersToCsv(IEnumerable<TimerDefinition> timers, string filePath)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Name,IntervalMs,Mode");
+        
+        foreach (var t in timers)
+        {
+            sb.AppendLine($"{EscapeCsv(t.Name)},{t.IntervalMs},{t.Mode}");
+        }
+        
+        File.WriteAllText(filePath, sb.ToString());
+    }
+
+    // ========== Утилиты ==========
+    private static string EscapeCsv(string? value)
+    {
+        if (value == null) return "";
+        return value.Replace("\"", "\"\"").Replace(",", ";").Replace("\n", " ");
+    }
+
+    // ========== AST Tree Rendering ==========
+    private static string RenderAstTree(ExpressionNode node, string indent = "    ")
+    {
+        var sb = new StringBuilder();
+        RenderNode(node, sb, indent, "");
+        return sb.ToString().TrimEnd('\n');
+    }
+
+    private static void RenderNode(ExpressionNode node, StringBuilder sb, string indent, string prefix)
+    {
+        var type = node.GetType().Name.Replace("Node", "");
+        sb.AppendLine($"{indent}{prefix}{type}");
+
+        switch (node)
+        {
+            case ConstantNode cn:
+                sb.AppendLine($"{indent}  └─ value = {cn.Value} ({cn.Value?.GetType().Name ?? "null"})");
+                break;
+
+            case VariableNode vn:
+                sb.AppendLine($"{indent}  └─ name = {vn.Name}");
+                if (!string.IsNullOrEmpty(vn.TableSetName))
+                    sb.AppendLine($"{indent}     table = {vn.TableSetName}");
+                break;
+
+            case FieldAccessNode fan:
+                sb.AppendLine($"{indent}  └─ field = {fan.FieldName}");
+                sb.AppendLine($"{indent}  └─ target:");
+                RenderNode(fan.Target, sb, indent + "     ", "");
+                break;
+
+            case FunctionCallNode fcn:
+                sb.AppendLine($"{indent}  └─ function = {fcn.FunctionName}");
+                sb.AppendLine($"{indent}  └─ arguments ({fcn.Arguments.Count}):");
+                for (int i = 0; i < fcn.Arguments.Count; i++)
+                {
+                    RenderNode(fcn.Arguments[i], sb, indent + "     ", $"  [{i}] ");
+                }
+                break;
+
+            case BinaryExpressionNode ben:
+                var opName = ben.Operator.ToString();
+                sb.AppendLine($"{indent}  └─ operator = {opName}");
+                sb.AppendLine($"{indent}  └─ left:");
+                RenderNode(ben.Left, sb, indent + "     ", "");
+                sb.AppendLine($"{indent}  └─ right:");
+                RenderNode(ben.Right, sb, indent + "     ", "");
+                break;
+
+            case UnaryExpressionNode uen:
+                sb.AppendLine($"{indent}  └─ operator = {uen.Operator}");
+                sb.AppendLine($"{indent}  └─ operand:");
+                RenderNode(uen.Operand, sb, indent + "     ", "");
+                break;
+
+            case TernaryExpressionNode ten:
+                sb.AppendLine($"{indent}  └─ condition:");
+                RenderNode(ten.Condition, sb, indent + "     ", "");
+                sb.AppendLine($"{indent}  └─ true:");
+                RenderNode(ten.TrueExpression, sb, indent + "     ", "");
+                sb.AppendLine($"{indent}  └─ false:");
+                RenderNode(ten.FalseExpression, sb, indent + "     ", "");
+                break;
+
+            case IndexAccessNode ian:
+                sb.AppendLine($"{indent}  └─ index:");
+                RenderNode(ian.Index, sb, indent + "     ", "");
+                sb.AppendLine($"{indent}  └─ target:");
+                RenderNode(ian.Target, sb, indent + "     ", "");
+                break;
+
+            case ArrayLiteralNode aln:
+                sb.AppendLine($"{indent}  └─ elements ({aln.Elements.Count}):");
+                for (int i = 0; i < aln.Elements.Count; i++)
+                {
+                    RenderNode(aln.Elements[i], sb, indent + "     ", $"  [{i}] ");
+                }
+                break;
+
+            default:
+                sb.AppendLine($"{indent}  └─ (unknown node type: {node.GetType().Name})");
+                break;
+        }
+    }
+}

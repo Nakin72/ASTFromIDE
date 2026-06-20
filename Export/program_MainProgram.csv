@@ -1,0 +1,30 @@
+LineNumber,FormId,Comment
+1,core.assign,Counter = StartValue
+2,core.assign,Sum = 0
+3,core.lbl,
+4,core.jumpif,Выход если Counter >= 6
+5,core.assign,
+6,core.if,
+7,core.assign,Чётное
+8,core.else,
+9,core.assign,Нечётное
+10,core.endif,
+11,core.switch,
+12,core.case,
+13,core.assign,Case 2
+14,core.default,
+15,core.assign,Default
+16,core.endswitch,
+17,core.for,FOR цикл
+18,core.assign,
+19,core.if,
+20,core.break,Break если Sum>50
+21,core.endif,
+22,core.endfor,
+23,core.assign,
+24,core.if,
+25,core.continue,Пропуск чётных
+26,core.endif,
+27,core.jumplbl,
+28,core.lbl,
+29,core.return,

@@ -1,0 +1,10 @@
+Code,Name,Severity,MessageTemplate,IsSystem
+1,DIVISION_BY_ZERO,Error,"Деление на ноль",True
+2,VARIABLE_NOT_FOUND,Error,"Переменная '{0}' не найдена",True
+3,TYPE_MISMATCH,Warning,"Несовместимость типов: {0}",True
+4,PROGRAM_NOT_FOUND,Error,"Программа '{0}' не найдена",True
+5,MAX_CYCLES_EXCEEDED,Warning,"Превышено максимальное число циклов ({0})",True
+10,USER_DEFINED,Error,"{0}",True
+1000,SAFETY_DOOR,Fatal,"Safety door is open on line {0}",False
+1001,TOOL_WEAR,Warning,"Tool wear {0}% exceeded limit",False
+1002,PART_OK,Info,"Part quality check passed",False

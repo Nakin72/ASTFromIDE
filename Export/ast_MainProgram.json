@@ -1,0 +1,363 @@
+[
+  {
+    "Program": "MainProgram",
+    "Line": 1,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "StartValue",
+    "Ast": {
+      "$type": "variable",
+      "name": "StartValue",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 2,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "0",
+    "Ast": {
+      "$type": "constant",
+      "value": 0
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 3,
+    "FormId": "core.lbl",
+    "FieldName": "labelName",
+    "ExpressionText": "START",
+    "Ast": {
+      "$type": "variable",
+      "name": "START",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 4,
+    "FormId": "core.jumpif",
+    "FieldName": "condition",
+    "ExpressionText": "Counter \u003E= 6",
+    "Ast": {
+      "$type": "binary",
+      "operator": "greaterOrEqual",
+      "left": {
+        "$type": "variable",
+        "name": "Counter",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "constant",
+        "value": 6
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 4,
+    "FormId": "core.jumpif",
+    "FieldName": "labelName",
+    "ExpressionText": "END",
+    "Ast": {
+      "$type": "variable",
+      "name": "END",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 5,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "Sum \u002B Counter",
+    "Ast": {
+      "$type": "binary",
+      "operator": "add",
+      "left": {
+        "$type": "variable",
+        "name": "Sum",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "variable",
+        "name": "Counter",
+        "tableSetName": null
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 6,
+    "FormId": "core.if",
+    "FieldName": "condition",
+    "ExpressionText": "(Counter % 2) == 0",
+    "Ast": {
+      "$type": "binary",
+      "operator": "equal",
+      "left": {
+        "$type": "binary",
+        "operator": "modulo",
+        "left": {
+          "$type": "variable",
+          "name": "Counter",
+          "tableSetName": null
+        },
+        "right": {
+          "$type": "constant",
+          "value": 2
+        }
+      },
+      "right": {
+        "$type": "constant",
+        "value": 0
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 7,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "True",
+    "Ast": {
+      "$type": "variable",
+      "name": "True",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 9,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "False",
+    "Ast": {
+      "$type": "variable",
+      "name": "False",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 11,
+    "FormId": "core.switch",
+    "FieldName": "expression",
+    "ExpressionText": "Counter",
+    "Ast": {
+      "$type": "variable",
+      "name": "Counter",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 12,
+    "FormId": "core.case",
+    "FieldName": "value",
+    "ExpressionText": "2",
+    "Ast": {
+      "$type": "constant",
+      "value": 2
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 13,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "100",
+    "Ast": {
+      "$type": "constant",
+      "value": 100
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 15,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "0",
+    "Ast": {
+      "$type": "constant",
+      "value": 0
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 17,
+    "FormId": "core.for",
+    "FieldName": "start",
+    "ExpressionText": "Counter \u002B 1",
+    "Ast": {
+      "$type": "binary",
+      "operator": "add",
+      "left": {
+        "$type": "variable",
+        "name": "Counter",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "constant",
+        "value": 1
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 17,
+    "FormId": "core.for",
+    "FieldName": "end",
+    "ExpressionText": "Counter \u002B 3",
+    "Ast": {
+      "$type": "binary",
+      "operator": "add",
+      "left": {
+        "$type": "variable",
+        "name": "Counter",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "constant",
+        "value": 3
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 17,
+    "FormId": "core.for",
+    "FieldName": "step",
+    "ExpressionText": "1",
+    "Ast": {
+      "$type": "constant",
+      "value": 1
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 18,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "Sum \u002B Counter",
+    "Ast": {
+      "$type": "binary",
+      "operator": "add",
+      "left": {
+        "$type": "variable",
+        "name": "Sum",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "variable",
+        "name": "Counter",
+        "tableSetName": null
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 19,
+    "FormId": "core.if",
+    "FieldName": "condition",
+    "ExpressionText": "Sum \u003E 50",
+    "Ast": {
+      "$type": "binary",
+      "operator": "greaterThan",
+      "left": {
+        "$type": "variable",
+        "name": "Sum",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "constant",
+        "value": 50
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 23,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "Counter \u002B 1",
+    "Ast": {
+      "$type": "binary",
+      "operator": "add",
+      "left": {
+        "$type": "variable",
+        "name": "Counter",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "constant",
+        "value": 1
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 24,
+    "FormId": "core.if",
+    "FieldName": "condition",
+    "ExpressionText": "(Counter % 2) == 0",
+    "Ast": {
+      "$type": "binary",
+      "operator": "equal",
+      "left": {
+        "$type": "binary",
+        "operator": "modulo",
+        "left": {
+          "$type": "variable",
+          "name": "Counter",
+          "tableSetName": null
+        },
+        "right": {
+          "$type": "constant",
+          "value": 2
+        }
+      },
+      "right": {
+        "$type": "constant",
+        "value": 0
+      }
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 27,
+    "FormId": "core.jumplbl",
+    "FieldName": "labelName",
+    "ExpressionText": "START",
+    "Ast": {
+      "$type": "variable",
+      "name": "START",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 28,
+    "FormId": "core.lbl",
+    "FieldName": "labelName",
+    "ExpressionText": "END",
+    "Ast": {
+      "$type": "variable",
+      "name": "END",
+      "tableSetName": null
+    }
+  },
+  {
+    "Program": "MainProgram",
+    "Line": 29,
+    "FormId": "core.return",
+    "FieldName": "value",
+    "ExpressionText": "Sum",
+    "Ast": {
+      "$type": "variable",
+      "name": "Sum",
+      "tableSetName": null
+    }
+  }
+]

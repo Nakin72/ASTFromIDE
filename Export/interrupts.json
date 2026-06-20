@@ -1,0 +1,58 @@
+[
+  {
+    "Id": "int-alarm",
+    "Name": "OnSafetyAlarm",
+    "TriggerType": "onAlarm",
+    "Expression": null,
+    "VariableName": null,
+    "AlarmCode": 1001,
+    "TimerIntervalMs": null,
+    "HandlerProgramName": "",
+    "ExecutionMode": "deferred",
+    "IsEnabled": true,
+    "Priority": 100,
+    "Description": null
+  },
+  {
+    "Id": "int-bg",
+    "Name": "BgSensorCheck",
+    "TriggerType": "onValue",
+    "Expression": "Sensor1 \u003E 5",
+    "VariableName": null,
+    "AlarmCode": null,
+    "TimerIntervalMs": null,
+    "HandlerProgramName": "Multiply",
+    "ExecutionMode": "background",
+    "IsEnabled": true,
+    "Priority": 100,
+    "Description": null
+  },
+  {
+    "Id": "int-rise",
+    "Name": "OnRisingSensor2",
+    "TriggerType": "onRisingEdge",
+    "Expression": null,
+    "VariableName": "Sensor2",
+    "AlarmCode": null,
+    "TimerIntervalMs": null,
+    "HandlerProgramName": "",
+    "ExecutionMode": "inline",
+    "IsEnabled": true,
+    "Priority": 100,
+    "Description": null
+  },
+  {
+    "Id": "int-timer",
+    "Name": "OnTimerElapsed",
+    "TriggerType": "onTimer",
+    "Expression": null,
+    "VariableName": null,
+    "AlarmCode": null,
+    "TimerIntervalMs": 300,
+    "HandlerProgramName": "",
+    "ExecutionMode": "deferred",
+    "IsEnabled": true,
+    "Priority": 100,
+    "Description": null
+  }
+]

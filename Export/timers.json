@@ -1,0 +1,32 @@
+[
+  {
+    "Id": "33855443-52f2-4c1c-80fa-db12c1dd01d2",
+    "Name": "Periodic250",
+    "IntervalMs": 250,
+    "Mode": "periodic",
+    "HandlerProgramName": null,
+    "InterruptId": null,
+    "IsEnabled": true,
+    "Description": null
+  },
+  {
+    "Id": "42b726dc-383a-4b98-8cc7-6ba3ee648db9",
+    "Name": "Oneshot500",
+    "IntervalMs": 500,
+    "Mode": "oneshot",
+    "HandlerProgramName": null,
+    "InterruptId": null,
+    "IsEnabled": false,
+    "Description": null
+  },
+  {
+    "Id": "bdd30d5f-b2f6-4df3-af97-f84d50b3b450",
+    "Name": "TimerWithInt",
+    "IntervalMs": 300,
+    "Mode": "periodic",
+    "HandlerProgramName": null,
+    "InterruptId": null,
+    "IsEnabled": true,
+    "Description": null
+  }
+]

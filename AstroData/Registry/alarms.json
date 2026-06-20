@@ -132,7 +132,7 @@
     {
       "Code": 1001,
       "State": "active",
-      "RaisedAt": "2026-06-20T11:52:39.3655269Z",
+      "RaisedAt": "2026-06-20T13:20:49.6940013Z",
       "AcknowledgedAt": null,
       "ClearedAt": null,
       "Arguments": [
@@ -145,7 +145,7 @@
     {
       "Code": 1002,
       "State": "active",
-      "RaisedAt": "2026-06-20T11:52:39.3684414Z",
+      "RaisedAt": "2026-06-20T13:20:49.6971297Z",
       "AcknowledgedAt": null,
       "ClearedAt": null,
       "Arguments": [
@@ -158,24 +158,11 @@
     {
       "Code": 1002,
       "State": "inactive",
-      "RaisedAt": "2026-06-20T11:52:39.3684414Z",
-      "AcknowledgedAt": "2026-06-20T11:52:39.3686633Z",
-      "ClearedAt": "2026-06-20T11:52:39.3695406Z",
+      "RaisedAt": "2026-06-20T13:20:49.6971297Z",
+      "AcknowledgedAt": "2026-06-20T13:20:49.6973627Z",
+      "ClearedAt": "2026-06-20T13:20:49.6975745Z",
       "Arguments": [
         95
-      ],
-      "SourceLine": null,
-      "SourceProgram": null,
-      "OccurrenceCount": 1
-    },
-    {
-      "Code": 1002,
-      "State": "active",
-      "RaisedAt": "2026-06-20T11:52:39.3695774Z",
-      "AcknowledgedAt": null,
-      "ClearedAt": null,
-      "Arguments": [
-        50
       ],
       "SourceLine": null,
       "SourceProgram": null,
@@ -184,28 +171,15 @@
     {
       "Code": 1001,
       "State": "inactive",
-      "RaisedAt": "2026-06-20T11:52:39.3695768Z",
+      "RaisedAt": "2026-06-20T13:20:49.6976089Z",
       "AcknowledgedAt": null,
-      "ClearedAt": "2026-06-20T11:52:39.3699929Z",
+      "ClearedAt": "2026-06-20T13:20:49.6980247Z",
       "Arguments": [
         "Main"
       ],
       "SourceLine": 15,
       "SourceProgram": "MainProgram",
       "OccurrenceCount": 2
-    },
-    {
-      "Code": 1002,
-      "State": "inactive",
-      "RaisedAt": "2026-06-20T11:52:39.3695774Z",
-      "AcknowledgedAt": null,
-      "ClearedAt": "2026-06-20T11:52:39.3699954Z",
-      "Arguments": [
-        50
-      ],
-      "SourceLine": null,
-      "SourceProgram": null,
-      "OccurrenceCount": 1
     }
   ]
 }

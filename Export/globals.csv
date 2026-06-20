@@ -1,0 +1,8 @@
+TableName,VariableName,Type,Value
+INT,GlobalCounter,INT,"0"
+INT,Sensor1,INT,"150"
+INT,Sensor2,INT,"200"
+REAL,Pi,REAL,"3,14159"
+STRING,Status,STRING,"Idle"
+COLOR,SelectedColor,COLOR,"0"
+POINT,CurrentPos,POINT,"System.Collections.Generic.Dictionary`2[System.String,System.Object]"

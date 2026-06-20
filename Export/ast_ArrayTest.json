@@ -1,0 +1,208 @@
+[
+  {
+    "Program": "ArrayTest",
+    "Line": 1,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "SIZE(MyArray)",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "SIZE",
+      "arguments": [
+        {
+          "$type": "variable",
+          "name": "MyArray",
+          "tableSetName": null
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 3,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "Sum \u002B Item",
+    "Ast": {
+      "$type": "binary",
+      "operator": "add",
+      "left": {
+        "$type": "variable",
+        "name": "Sum",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "variable",
+        "name": "Item",
+        "tableSetName": null
+      }
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 5,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "10",
+    "Ast": {
+      "$type": "constant",
+      "value": 10
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 6,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "ADD(MyArray, Item)",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "ADD",
+      "arguments": [
+        {
+          "$type": "variable",
+          "name": "MyArray",
+          "tableSetName": null
+        },
+        {
+          "$type": "variable",
+          "name": "Item",
+          "tableSetName": null
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 7,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "FIND(MyArray, 3)",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "FIND",
+      "arguments": [
+        {
+          "$type": "variable",
+          "name": "MyArray",
+          "tableSetName": null
+        },
+        {
+          "$type": "constant",
+          "value": 3
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 8,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "SIZE(SLICE(MyArray, 1, 3))",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "SIZE",
+      "arguments": [
+        {
+          "$type": "functioncall",
+          "functionName": "SLICE",
+          "arguments": [
+            {
+              "$type": "variable",
+              "name": "MyArray",
+              "tableSetName": null
+            },
+            {
+              "$type": "constant",
+              "value": 1
+            },
+            {
+              "$type": "constant",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 9,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "RANGE(1, 5, 1)",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "RANGE",
+      "arguments": [
+        {
+          "$type": "constant",
+          "value": 1
+        },
+        {
+          "$type": "constant",
+          "value": 5
+        },
+        {
+          "$type": "constant",
+          "value": 1
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 10,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "SIN(3.14159 / 2)",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "SIN",
+      "arguments": [
+        {
+          "$type": "binary",
+          "operator": "divide",
+          "left": {
+            "$type": "constant",
+            "value": 3.14159
+          },
+          "right": {
+            "$type": "constant",
+            "value": 2
+          }
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 11,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "SQRT(16)",
+    "Ast": {
+      "$type": "functioncall",
+      "functionName": "SQRT",
+      "arguments": [
+        {
+          "$type": "constant",
+          "value": 16
+        }
+      ]
+    }
+  },
+  {
+    "Program": "ArrayTest",
+    "Line": 13,
+    "FormId": "core.return",
+    "FieldName": "value",
+    "ExpressionText": "Sum",
+    "Ast": {
+      "$type": "variable",
+      "name": "Sum",
+      "tableSetName": null
+    }
+  }
+]

@@ -1,0 +1,5 @@
+Id,Name,TriggerType,ExecutionMode,IsEnabled,VariableName,AlarmCode,TimerIntervalMs,HandlerProgram
+int-alarm,OnSafetyAlarm,OnAlarm,Deferred,True,,1001,0,
+int-bg,BgSensorCheck,OnValue,Background,True,,0,0,Multiply
+int-rise,OnRisingSensor2,OnRisingEdge,Inline,True,Sensor2,0,0,
+int-timer,OnTimerElapsed,OnTimer,Deferred,True,,0,300,

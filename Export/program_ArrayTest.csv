@@ -1,0 +1,14 @@
+LineNumber,FormId,Comment
+1,core.assign,Size = SIZE(MyArray)
+2,core.foreach,FOREACH Item IN MyArray
+3,core.assign,Sum = Sum + Item
+4,core.endforeach,
+5,core.assign,Item = 10
+6,core.assign,ADD(MyArray; 10)
+7,core.assign,Index = FIND(MyArray; 3)
+8,core.assign,Size = SIZE(SLICE(MyArray; 1; 3))
+9,core.assign,MyArray = RANGE(1; 5; 1)
+10,core.assign,X = SIN(PI/2)
+11,core.assign,X = SQRT(16)
+12,core.assign,Message = 'Hello World'
+13,core.return,

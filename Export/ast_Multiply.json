@@ -1,0 +1,35 @@
+[
+  {
+    "Program": "Multiply",
+    "Line": 1,
+    "FormId": "core.assign",
+    "FieldName": "expression",
+    "ExpressionText": "A * B",
+    "Ast": {
+      "$type": "binary",
+      "operator": "multiply",
+      "left": {
+        "$type": "variable",
+        "name": "A",
+        "tableSetName": null
+      },
+      "right": {
+        "$type": "variable",
+        "name": "B",
+        "tableSetName": null
+      }
+    }
+  },
+  {
+    "Program": "Multiply",
+    "Line": 2,
+    "FormId": "core.return",
+    "FieldName": "value",
+    "ExpressionText": "Result",
+    "Ast": {
+      "$type": "variable",
+      "name": "Result",
+      "tableSetName": null
+    }
+  }
+]
