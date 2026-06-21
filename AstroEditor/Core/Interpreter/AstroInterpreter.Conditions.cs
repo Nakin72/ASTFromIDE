@@ -6,7 +6,7 @@ using AstroEditor.Core.Expressions;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     #region IF / ELSE / ENDIF
 
@@ -14,7 +14,8 @@ public partial class AstroInterpreter
     private void ExecuteIf(Instruction instruction)
     {
         var condField = GetFieldValue<ExpressionFieldValue>(instruction, "condition");
-        var exprNode = _parser.Parse(condField.Expression);
+        // ✅ P1-6: Используем кэш выражений
+        var exprNode = ParseCachedExpression(condField.Expression);
         var evalContext = CreateExpressionContext();
         var condition = _evaluator.Evaluate(exprNode, evalContext);
 
@@ -46,7 +47,8 @@ public partial class AstroInterpreter
     private void ExecuteSwitch(Instruction instruction)
     {
         var exprField = GetFieldValue<ExpressionFieldValue>(instruction, "expression");
-        var exprNode = _parser.Parse(exprField.Expression);
+        // ✅ P1-6: Используем кэш выражений
+        var exprNode = ParseCachedExpression(exprField.Expression);
         var evalContext = CreateExpressionContext();
         var value = _evaluator.Evaluate(exprNode, evalContext);
 

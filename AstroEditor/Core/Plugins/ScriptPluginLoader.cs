@@ -131,7 +131,7 @@ public class ScriptPluginLoader
             
             // Ссылки на AstroEditor
             MetadataReference.CreateFromFile(typeof(IPlugin).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(AstroInterpreter).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(AstroInterpreterEx).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IBuiltinFunction).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(FormDefinition).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(DataType).Assembly.Location),

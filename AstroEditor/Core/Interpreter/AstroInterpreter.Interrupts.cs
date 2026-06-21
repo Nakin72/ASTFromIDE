@@ -9,7 +9,7 @@ using AstroEditor.Core.Execution;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     [InstructionHandler("core.interrupt.declare")]
     private void ExecuteInterruptDeclare(Instruction instruction)

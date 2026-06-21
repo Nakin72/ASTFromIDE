@@ -7,7 +7,7 @@ using AstroEditor.Core.Alarms;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     [InstructionHandler("core.alarm.raise")]
     private void ExecuteAlarmRaise(Instruction instruction)

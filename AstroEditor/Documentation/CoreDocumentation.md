@@ -316,9 +316,12 @@ public enum BindingDirection
 ### 4.2. Создание привязки
 
 ```csharp
-var binding = BindingManager.Bind(
-    sourceVariable: "Sensor1",
-    targetVariable: "GlobalCounter",
+// ✅ P0-1: Используем IBindingService вместо статического BindingManager
+var bindingService = project.Bindings;
+
+var binding = bindingService.Bind(
+    sourceName: "Sensor1",
+    targetName: "GlobalCounter",
     direction: BindingDirection.OneWayToTarget
 );
 ```
@@ -337,11 +340,14 @@ public class BindingRouter
 
 **Пример:**
 ```csharp
-// При изменении Sensor1 автоматически обновится GlobalCounter
-BindingManager.Bind("Sensor1", "GlobalCounter", BindingDirection.OneWayToTarget);
+// ✅ P0-1: Используем IBindingService
+var bindingService = project.Bindings;
 
-// Изменение
-sensor1Var.Value = 50;
+// При изменении Sensor1 автоматически обновится GlobalCounter
+bindingService.Bind("Sensor1", "GlobalCounter", BindingDirection.OneWayToTarget);
+
+// Изменение через сервис
+bindingService.UpdateValue("Sensor1", 50);
 // → BindingRouter.RouteChange("Sensor1", 50)
 // → GlobalCounter автоматически станет 50
 ```

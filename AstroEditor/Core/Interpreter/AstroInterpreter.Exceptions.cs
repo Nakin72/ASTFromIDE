@@ -7,7 +7,7 @@ using AstroEditor.Core.Variables;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     #region TRY / CATCH / FINALLY / ENDTRY
 
@@ -185,11 +185,10 @@ public partial class AstroInterpreter
         var message = "Unknown error";
         if (TryGetFieldValue<ExpressionFieldValue>(instruction, "message", out var msgField))
         {
-            var parser = new ExpressionParser();
-            var evaluator = new ExpressionEvaluator();
+            // ✅ P1-6: Используем кэш выражений
+            var node = ParseCachedExpression(msgField.Expression);
             var ctx = CreateExpressionContext();
-            var node = parser.Parse(msgField.Expression);
-            message = evaluator.Evaluate(node, ctx)?.ToString() ?? $"Error {errorCode}";
+            message = _evaluator.Evaluate(node, ctx)?.ToString() ?? $"Error {errorCode}";
         }
 
         // Создаём исключение

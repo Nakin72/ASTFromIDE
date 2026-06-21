@@ -18,7 +18,8 @@ public class InterruptManager : IInterruptService, IDisposable
     private readonly Dictionary<string, InterruptDefinition> _definitions = new();
     private readonly List<(string Id, object? PreviousValue)> _monitoredExpressions = new();
     private readonly object _lock = new();
-    private Thread? _monitorThread;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task? _monitorTask;
     private volatile bool _running;
 
     // Внешние зависимости
@@ -98,32 +99,35 @@ public class InterruptManager : IInterruptService, IDisposable
     // ========== Мониторинг и запуск ==========
 
     /// <summary>
-    /// Запускает поток мониторинга триггеров.
+    /// Запускает задачу мониторинга триггеров.
+    /// ✅ P2: Task.Run вместо new Thread (использует ThreadPool)
     /// </summary>
     public void StartMonitoring()
     {
         if (_running) return;
         _running = true;
-        _monitorThread = new Thread(MonitorLoop)
-        {
-            Name = "AST-InterruptMonitor",
-            IsBackground = true
-        };
-        _monitorThread.Start();
+        _cancellationTokenSource = new CancellationTokenSource();
+        
+        // ✅ P2: Task.Run вместо new Thread
+        _monitorTask = Task.Run(() => MonitorLoop(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
     }
 
     public void StopMonitoring()
     {
         _running = false;
-        _monitorThread?.Join(500);
+        _cancellationTokenSource?.Cancel();
+        _monitorTask?.Wait(500);
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = null;
+        _monitorTask = null;
     }
 
-    private void MonitorLoop()
+    private void MonitorLoop(CancellationToken cancellationToken)
     {
         var parser = new ExpressionParser();
         var evaluator = new ExpressionEvaluator();
 
-        while (_running)
+        while (!cancellationToken.IsCancellationRequested)
         {
             List<InterruptDefinition> toFire = new();
 
@@ -204,7 +208,8 @@ public class InterruptManager : IInterruptService, IDisposable
             foreach (var def in toFire)
                 Fire(def);
 
-            Thread.Sleep(50); // частота опроса 20 Гц
+            // ✅ P2: Task.Delay вместо Thread.Sleep
+            Task.Delay(50, cancellationToken).Wait(cancellationToken);
         }
     }
 
@@ -277,20 +282,21 @@ public class InterruptManager : IInterruptService, IDisposable
         }
     }
 
-    // ========== Deferred-очередь ==========
-
-    private readonly Queue<InterruptDefinition> _deferredQueue = new();
+    // ========== Deferred-очередь с приоритетами ==========
+    // ✅ P2-1: PriorityQueue вместо Queue для приоритетов
+    private readonly PriorityQueue<InterruptDefinition, int> _deferredQueue = new();
 
     private void EnqueueDeferred(InterruptDefinition def)
     {
         lock (_deferredQueue)
         {
-            _deferredQueue.Enqueue(def);
+            _deferredQueue.Enqueue(def, def.Priority);
         }
     }
 
     /// <summary>
-    /// Извлекает следующее отложенное прерывание. Вызывается интерпретатором перед каждой инструкцией.
+    /// Извлекает следующее отложенное прерывание (с highest приоритетом).
+    /// Вызывается интерпретатором перед каждой инструкцией.
     /// </summary>
     public InterruptDefinition? DequeueDeferred()
     {

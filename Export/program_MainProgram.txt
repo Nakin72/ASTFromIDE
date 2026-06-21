@@ -1,56 +1,57 @@
 ╔══════════════════════════════════════════════════════════╗
-║  Программа: MainProgram                                  ║
+║  ПРОГРАММА: MainProgram                                    ║
 ╠══════════════════════════════════════════════════════════╣
-│  Автор: Demo                                             │
-│  Версия: 4.0                                             │
-│  Описание: Полный демонстратор всех инструкций ASTRO     │
-│  Строк: 29                                               │
+║  Автор: Demo                                             ║
+║  Версия: 4.0                                             ║
+║  Описание: Полный демонстратор всех инструкций ASTRO     ║
+║  Строк инструкций: 23                                     ║
+║  Аргументов: 2                                          ║
+║  Локальных переменных: 6                                      ║
+║  Макс. циклов: 1000                                       ║
 ╠══════════════════════════════════════════════════════════╣
-│  АРГУМЕНТЫ:
-│    • StartValue (int) [In] = 0
-│    • ColorArg (color) [In] = 0
+║  АРГУМЕНТЫ:                                                ║
+║    • StartValue           (int     ) [In] = 0              ║
+║    • ColorArg             (color   ) [In] = 0              ║
 ╠══════════════════════════════════════════════════════════╣
-│  ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ:
-│    • Counter (INT) = 0
-│    • Sum (INT) = 0
-│    • Temp (REAL) = 0
-│    • IsEven (BOOL) = False
-│    • X (DOUBLE) = 0
-│    • Message (STRING) = 
+║  ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ:                                     ║
+║    • Counter              (INT     ) = 0                    ║
+║    • Sum                  (INT     ) = 0                    ║
+║    • Message              (STRING  ) =                      ║
+║    • IsEven               (BOOL    ) = False                ║
+║    • X                    (DOUBLE  ) = 0                    ║
+║    • Temp                 (REAL    ) = 0                    ║
 ╠══════════════════════════════════════════════════════════╣
-│  ИНСТРУКЦИИ:
-╠═══════╦══════════════════════════════════════════════════╣
-║ Строка║  Инструкция                                      ║
-╠═══════╬══════════════════════════════════════════════════╣
-║     1 ║  core.assign                                        ; Counter = StartValue
-║     2 ║  core.assign                                        ; Sum = 0
-║     3 ║  core.lbl                                          
-║     4 ║  core.jumpif                                        ; Выход если Counter >= 6
-║     5 ║  core.assign                                       
-║     6 ║  core.if                                           
-║     7 ║  core.assign                                        ; Чётное
-║     8 ║  core.else                                         
-║     9 ║  core.assign                                        ; Нечётное
-║    10 ║  core.endif                                        
-║    11 ║  core.switch                                       
-║    12 ║  core.case                                         
-║    13 ║  core.assign                                        ; Case 2
-║    14 ║  core.default                                      
-║    15 ║  core.assign                                        ; Default
-║    16 ║  core.endswitch                                    
-║    17 ║  core.for                                           ; FOR цикл
-║    18 ║  core.assign                                       
-║    19 ║  core.if                                           
-║    20 ║  core.break                                         ; Break если Sum>50
-║    21 ║  core.endif                                        
-║    22 ║  core.endfor                                       
-║    23 ║  core.assign                                       
-║    24 ║  core.if                                           
-║    25 ║  core.continue                                      ; Пропуск чётных
-║    26 ║  core.endif                                        
-║    27 ║  core.jumplbl                                      
-║    28 ║  core.lbl                                          
-║    29 ║  core.return                                       
-╚═══════╩══════════════════════════════════════════════════╝
+║  МЕТКИ:                                                    ║
+║    • END                  -> строка 22                                          ║
+║    • START                -> строка 3                                          ║
+╠══════════════════════════════════════════════════════════╣
+║  ИНСТРУКЦИИ:                                               ║
+╠════════╦══════════════════════════════════════════════════╣
+║ № строки║  Форма                                           ║
+╠════════╬══════════════════════════════════════════════════╣
+║      1 ║  Assign (variable=LocalVariables.Counter (int), exp║
+║      2 ║  Assign (variable=LocalVariables.Sum (int), express║
+║      3 ║  Lbl (labelName=START)                             ║
+║      4 ║  JumpIf (condition=Counter >= 6, labelName=END)  ; ║
+║      5 ║  Assign (variable=LocalVariables.Sum (int), express║
+║      6 ║  If (condition=(Counter % 2) == 0)                 ║
+║      7 ║  Assign (variable=LocalVariables.IsEven (bool), exp║
+║      8 ║  Else                                              ║
+║      9 ║  Assign (variable=LocalVariables.IsEven (bool), exp║
+║     10 ║  EndIf                                             ║
+║     11 ║  For (variable=LocalVariables.Counter (int), start=║
+║     12 ║  Assign (variable=LocalVariables.Sum (int), express║
+║     13 ║  If (condition=Sum > 50)                           ║
+║     14 ║  Break  ; Break если Sum>50                        ║
+║     15 ║  EndIf                                             ║
+║     16 ║  EndFor                                            ║
+║     17 ║  Assign (variable=LocalVariables.Counter (int), exp║
+║     18 ║  If (condition=(Counter % 2) == 0)                 ║
+║     19 ║  Continue  ; Пропуск чётных                        ║
+║     20 ║  EndIf                                             ║
+║     21 ║  JumpLbl (labelName=START)                         ║
+║     22 ║  Lbl (labelName=END)                               ║
+║     23 ║  Return (value=Sum)                                ║
+╚════════╩══════════════════════════════════════════════════╝
 
-Экспортировано: 20.06.2026 18:20:51
+Экспортировано: 21.06.2026 12:29:59

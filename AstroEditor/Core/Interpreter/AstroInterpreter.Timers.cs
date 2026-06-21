@@ -7,7 +7,7 @@ using AstroEditor.Core.Common;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     [InstructionHandler("core.timer.declare")]
     private void ExecuteTimerDeclare(Instruction instruction)

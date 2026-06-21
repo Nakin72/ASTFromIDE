@@ -1,6 +1,6 @@
 [
   {
-    "Id": "33855443-52f2-4c1c-80fa-db12c1dd01d2",
+    "Id": "8d859cb1-4871-47fd-b6bb-28aa267a5600",
     "Name": "Periodic250",
     "IntervalMs": 250,
     "Mode": "periodic",
@@ -10,7 +10,7 @@
     "Description": null
   },
   {
-    "Id": "42b726dc-383a-4b98-8cc7-6ba3ee648db9",
+    "Id": "66894b7c-38cb-4f8f-a242-0b3e63737fef",
     "Name": "Oneshot500",
     "IntervalMs": 500,
     "Mode": "oneshot",
@@ -20,7 +20,7 @@
     "Description": null
   },
   {
-    "Id": "bdd30d5f-b2f6-4df3-af97-f84d50b3b450",
+    "Id": "5b8e5691-b328-49f7-a7cb-da68f91fd1ba",
     "Name": "TimerWithInt",
     "IntervalMs": 300,
     "Mode": "periodic",

@@ -8,7 +8,7 @@ using AstroEditor.Core.Variables;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     private T GetFieldValue<T>(Instruction instruction, string fieldName) where T : FieldValue
     {

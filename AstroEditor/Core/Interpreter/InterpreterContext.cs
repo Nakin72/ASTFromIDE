@@ -1,11 +1,13 @@
-// AstroEditor.Core.v4/Interpreter/InterpreterContext.cs
+// AstroEditor.Core/Interpreter/InterpreterContext.cs
+
 using AstroEditor.Core.Types;
 using AstroEditor.Core.Tables;
 using AstroEditor.Core.Forms;
 using AstroEditor.Core.Expressions;
 using AstroEditor.Core.Programs;
 using AstroEditor.Core.Execution;
-// AstroEditor.Core.v4/Interpreter/InterpreterContext.cs
+using AstroEditor.Core.Binding;
+
 namespace AstroEditor.Core.Interpreter;
 
 public class InterpreterContext
@@ -20,6 +22,8 @@ public class InterpreterContext
     public IAlarmService? AlarmService { get; set; }
     public IInterruptService? InterruptService { get; set; }
     public ITimerService? TimerService { get; set; }
+    public IBindingService? BindingService { get; set; }
+    public IExpressionCache? ExpressionCache { get; set; }
 
     // События
     public event Action<InterpreterState, Instruction>? OnBeforeInstruction;

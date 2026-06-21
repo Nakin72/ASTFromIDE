@@ -2,13 +2,25 @@
   "name": "GlobalVariables",
   "isGlobal": true,
   "tables": {
+    "color": {
+      "typeId": "color",
+      "variables": [
+        {
+          "name": "SelectedColor",
+          "typeId": "color",
+          "value": 0,
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    },
     "int": {
       "typeId": "int",
       "variables": [
         {
           "name": "GlobalCounter",
           "typeId": "int",
-          "value": 0,
+          "value": 150,
           "comment": null,
           "constraints": null
         },
@@ -28,18 +40,6 @@
         }
       ]
     },
-    "real": {
-      "typeId": "real",
-      "variables": [
-        {
-          "name": "Pi",
-          "typeId": "real",
-          "value": 3.14159,
-          "comment": null,
-          "constraints": null
-        }
-      ]
-    },
     "string": {
       "typeId": "string",
       "variables": [
@@ -47,18 +47,6 @@
           "name": "Status",
           "typeId": "string",
           "value": "Idle",
-          "comment": null,
-          "constraints": null
-        }
-      ]
-    },
-    "color": {
-      "typeId": "color",
-      "variables": [
-        {
-          "name": "SelectedColor",
-          "typeId": "color",
-          "value": 0,
           "comment": null,
           "constraints": null
         }
@@ -75,6 +63,18 @@
             "Y": 200.3,
             "Z": 50
           },
+          "comment": null,
+          "constraints": null
+        }
+      ]
+    },
+    "real": {
+      "typeId": "real",
+      "variables": [
+        {
+          "name": "Pi",
+          "typeId": "real",
+          "value": 3.14159,
           "comment": null,
           "constraints": null
         }

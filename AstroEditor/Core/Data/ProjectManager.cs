@@ -1,12 +1,12 @@
 // AstroEditor/Core/Data/ProjectManager.cs
 // Центральный менеджер проекта.
-// Управляет реестрами типов, форм, таблицами переменных, программами.
-// Отвечает за атомарное сохранение/загрузку.
-// Синглтон для доступа из BindingRouter.
+// Координирует сервисы жизненного цикла, плагинов и интерпретаторов (SRP).
+// ✅ P3: Разделение ответственности через специализированные сервисы
 
 using AstroEditor.Core.Binding;
 using AstroEditor.Core.Execution;
 using AstroEditor.Core.Common;
+using AstroEditor.Core.Common.Logging;
 using AstroEditor.Core.Forms;
 using AstroEditor.Core.Programs;
 using AstroEditor.Core.Serialization;
@@ -16,6 +16,8 @@ using AstroEditor.Core.Expressions;
 using AstroEditor.Core.Interpreter;
 using AstroEditor.Core.Plugins;
 using AstroEditor.Core.Alarms;
+using AstroEditor.Core.Data.Services;
+using Microsoft.Extensions.Logging;
 using AstroGlobalTables = AstroEditor.Core.Tables.VariableTableSet;
 using AstroScheduler = AstroEditor.Core.Execution.TaskScheduler;
 
@@ -34,93 +36,128 @@ public class ProjectState
 }
 
 /// <summary>
-/// Менеджер проекта — синглтон, управляющий всеми данными и сохранением.
+/// Менеджер проекта — координирует сервисы.
+/// ✅ P3: Делегирует ответственность специализированным сервисам:
+///   - IProjectLifecycleService: инициализация, сохранение, загрузка
+///   - IPluginHostingService: управление плагинами
+///   - IInterpreterHostingService: создание интерпретаторов и планировщиков
+///   - ITypeService: управление типами и формами
+///   - IRuntimeService: аварии, прерывания, таймеры
+///   - IBindingService: привязки переменных
 /// </summary>
 public class ProjectManager
 {
-    private static ProjectManager? _instance;
-    public static ProjectManager? Instance => _instance;
-
-    private readonly ProjectState _state = new();
-    private string _projectFolder = string.Empty;
-    private string _registryFolder => Path.Combine(_projectFolder, "Registry");
-    private string _programsFolder => Path.Combine(_projectFolder, "Programs");
-    private bool _hasUnsavedChanges;
-
-    // Доступ к данным
-    public DataTypeRegistry TypeRegistry => _state.TypeRegistry;
-    public FormRegistry FormRegistry => _state.FormRegistry;
+    private readonly ProjectState _state;
+    private readonly ILogger _logger;
+    
+    // Сервисы
+    private readonly IProjectLifecycleService _lifecycleService;
+    private readonly IPluginHostingService _pluginHostingService;
+    private readonly IInterpreterHostingService _interpreterHostingService;
+    private readonly ITypeService _typeService;
+    private readonly IRuntimeService _runtimeService;
+    private readonly IBindingService _bindingService;
+    private readonly IProgramService _programService;
+    
+    // Публичный доступ к сервисам
+    public PluginManager? Plugins => _pluginHostingService.PluginManager;
+    public string ProjectFolder => _lifecycleService.ProjectFolder;
+    public bool HasUnsavedChanges => _lifecycleService.HasUnsavedChanges;
+    public DataTypeRegistry TypeRegistry => _typeService.TypeRegistry;
+    public FormRegistry FormRegistry => _typeService.FormRegistry;
     public AstroGlobalTables GlobalTables => _state.GlobalTables;
-    public Dictionary<string, Programs.AstroProgram> Programs => _state.Programs;
+    public IReadOnlyDictionary<string, Programs.AstroProgram> Programs => _programService.Programs;
     public Dictionary<string, Func<object?[], object?>> Functions => _state.Functions;
-    public string ProjectFolder => _projectFolder;
-    public bool HasUnsavedChanges => _hasUnsavedChanges;
+    
+    // Runtime-сервисы
+    public IAlarmService Alarms => _runtimeService.Alarms;
+    public IInterruptService Interrupts => _runtimeService.Interrupts;
+    public ITimerService Timers => _runtimeService.Timers;
 
-    // Планировщик
-    private AstroScheduler? _scheduler;
-
-    // Менеджер аварий
-    private AlarmManager? _alarmManager;
-    public IAlarmService Alarms
-    {
-        get
-        {
-            _alarmManager ??= CreateAlarmManager();
-            return _alarmManager;
-        }
-    }
-
-    // Менеджер прерываний
-    private InterruptManager? _interruptManager;
-    public IInterruptService Interrupts
-    {
-        get
-        {
-            if (_interruptManager == null)
-            {
-                _interruptManager = new InterruptManager
-                {
-                    GlobalTables = _state.GlobalTables,
-                    ProgramRegistry = _state.Programs,
-                    TypeRegistry = _state.TypeRegistry,
-                    AlarmManager = _alarmManager,
-                    Scheduler = _scheduler
-                };
-            }
-            return _interruptManager;
-        }
-    }
-
-    // Менеджер таймеров
-    private TimerManager? _timerManager;
-    public ITimerService Timers
-    {
-        get
-        {
-            if (_timerManager == null)
-            {
-                _timerManager = new TimerManager
-                {
-                    Interrupts = _interruptManager,
-                    Scheduler = _scheduler,
-                    ProgramRegistry = _state.Programs
-                };
-                _timerManager.Start();
-            }
-            return _timerManager;
-        }
-    }
-
-    // Менеджер плагинов
-    private PluginManager? _pluginManager;
-    public PluginManager? Plugins => _pluginManager;
-
-    // Событие изменения
+    // Сервис привязок
+    public IBindingService Bindings => _bindingService;
+    
+    // Событие изменения проекта
     public event Action? OnProjectChanged;
 
+    /// <summary>
+    /// Конструктор для DI с полным набором сервисов.
+    /// </summary>
+    public ProjectManager(
+        ProjectState state,
+        IProjectLifecycleService lifecycleService,
+        IPluginHostingService pluginHostingService,
+        IInterpreterHostingService interpreterHostingService,
+        ITypeService typeService,
+        IRuntimeService runtimeService,
+        IBindingService bindingService,
+        IProgramService programService,
+        ILogger<ProjectManager>? logger = null)
+    {
+        _state = state ?? throw new ArgumentNullException(nameof(state));
+        _lifecycleService = lifecycleService ?? throw new ArgumentNullException(nameof(lifecycleService));
+        _pluginHostingService = pluginHostingService ?? throw new ArgumentNullException(nameof(pluginHostingService));
+        _interpreterHostingService = interpreterHostingService ?? throw new ArgumentNullException(nameof(interpreterHostingService));
+        _typeService = typeService ?? throw new ArgumentNullException(nameof(typeService));
+        _runtimeService = runtimeService ?? throw new ArgumentNullException(nameof(runtimeService));
+        _bindingService = bindingService ?? throw new ArgumentNullException(nameof(bindingService));
+        _programService = programService ?? throw new ArgumentNullException(nameof(programService));
+        _logger = logger ?? Log.For<ProjectManager>();
+        
+        // Подписка на событие изменения проекта
+        _lifecycleService.OnProjectChanged += () => OnProjectChanged?.Invoke();
+        
+        _logger.LogDebug("ProjectManager created with DI services");
+    }
+        
+    /// <summary>
+    /// Конструктор по умолчанию (для обратной совместимости).
+    /// Создаёт все сервисы внутри себя.
+    /// </summary>
     public ProjectManager()
     {
-        _instance = this;
+        // ✅ P0-1: Единый экземпляр ProjectState
+        _state = new ProjectState();
+        _logger = Log.For<ProjectManager>();
+        
+        // Создаём базовые сервисы
+        _bindingService = new ThreadSafeBindingManager(_state.GlobalTables, _logger);
+        _programService = new ProgramService(_state, _logger);
+        _typeService = new TypeService(_state, _logger);
+        _runtimeService = new RuntimeService(_state, null, _logger);
+        
+        // Создаём хранилище
+        var storage = new ProjectStorageService(_state, _logger);
+        
+        // Создаём сервис жизненного цикла
+        _lifecycleService = new ProjectLifecycleService(_state, storage, _programService, _logger);
+        
+        // Создаём сервис плагинов
+        _pluginHostingService = new PluginHostingService(_state, _logger);
+        
+        // Создаём фабрики
+        var interpreterFactory = new InterpreterFactory(
+            _state.TypeRegistry,
+            _state.FormRegistry,
+            _state.GlobalTables,
+            _state.Programs,
+            _state.Functions,
+            null
+        );
+        var schedulerFactory = new SchedulerFactory(
+            _runtimeService.Alarms,
+            _runtimeService.Interrupts,
+            _runtimeService.Timers,
+            _bindingService
+        );
+        
+        // Создаём сервис интерпретаторов
+        _interpreterHostingService = new InterpreterHostingService(interpreterFactory, schedulerFactory, _logger);
+        
+        // Подписка на события
+        _lifecycleService.OnProjectChanged += () => OnProjectChanged?.Invoke();
+        
+        _logger.LogDebug("ProjectManager created with internal services");
     }
 
     /// <summary>
@@ -128,50 +165,41 @@ public class ProjectManager
     /// </summary>
     public void InitializeNew(string projectFolder)
     {
-        _projectFolder = projectFolder;
-        _state.TypeRegistry = new DataTypeRegistry();
-        _state.FormRegistry = new FormRegistry();
-        _state.GlobalTables = new AstroGlobalTables { Name = "GlobalVariables", IsGlobal = true };
-        _state.Programs.Clear();
-
-        RegisterPrimitives();
-        RegisterBuiltinForms();
+        _logger.LogInformation("Initializing new project: {Folder}", projectFolder);
+        
+        // Инициализируем хранилище
+        _lifecycleService.InitializeNew(projectFolder);
+        
+        // Инициализируем типы и формы
+        _typeService.InitializePrimitives();
+        _typeService.InitializeBuiltinForms();
+        
+        // Регистрация встроенных функций
         RegisterBuiltinFunctions();
 
-        // Инициализация аварий
-        _alarmManager = new AlarmManager();
-        _alarmManager.RegisterSystemAlarms();
+        // Инициализируем runtime
+        _runtimeService.Initialize();
 
-        // Инициализация плагинов
-        var pluginsFolder = Path.Combine(_projectFolder, "Plugins");
-        _pluginManager = new PluginManager(
-            pluginsFolder,
-            RegisterInstruction,
-            RegisterFunction,
-            FormRegistry.RegisterForm,
-            TypeRegistry.RegisterType
-        );
-        _pluginManager.LoadAllPlugins();
+        // Инициализируем плагины
+        _pluginHostingService.Initialize(projectFolder, _typeService);
+        _pluginHostingService.LoadAllPlugins();
 
-        _hasUnsavedChanges = true;
-        OnProjectChanged?.Invoke();
+        // Обновляем PluginManager в сервисе интерпретаторов
+        _interpreterHostingService.UpdatePluginManager(_pluginHostingService.PluginManager);
+
+        _logger.LogInformation("Project initialized successfully");
     }
 
     /// <summary>
-    /// Регистрация обработчика инструкции (для плагинов)
+    /// Регистрация встроенных функций.
     /// </summary>
-    private void RegisterInstruction(string formId, Action<Instruction> handler)
+    private void RegisterBuiltinFunctions()
     {
-        // Обработчики будут добавлены в интерпретатор при его создании
-        // Здесь можно добавить дополнительную логику
-    }
-
-    /// <summary>
-    /// Регистрация функции (для плагинов)
-    /// </summary>
-    private void RegisterFunction(string name, IBuiltinFunction function)
-    {
-        _state.Functions[name] = function.Execute;
+        _state.Functions.Clear();
+        var builtins = BuiltinFunctions.GetFunctions();
+        foreach (var kv in builtins)
+            _state.Functions[kv.Key] = kv.Value;
+        _logger.LogDebug("Registered {Count} builtin functions", builtins.Count);
     }
 
     /// <summary>
@@ -179,40 +207,13 @@ public class ProjectManager
     /// </summary>
     public void Open(string projectFolder)
     {
-        _projectFolder = projectFolder;
-        Directory.CreateDirectory(_registryFolder);
-        Directory.CreateDirectory(_programsFolder);
-
-        _state.TypeRegistry = AstroSerializer.LoadDataTypeRegistry(_registryFolder);
-        _state.FormRegistry = AstroSerializer.LoadFormRegistry(_registryFolder);
-        _state.GlobalTables = AstroSerializer.LoadGlobalTables(_registryFolder, _state.TypeRegistry);
-        _state.Programs.Clear();
-
-        // Загружаем все программы из папки
-        if (Directory.Exists(_programsFolder))
-        {
-            foreach (var file in Directory.GetFiles(_programsFolder, "*.ast"))
-            {
-                var progName = Path.GetFileNameWithoutExtension(file);
-                try
-                {
-                    var program = AstroSerializer.LoadProgram(_programsFolder, progName, _state.TypeRegistry);
-                    _state.Programs[progName] = program;
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to load program {progName}: {ex.Message}");
-                }
-            }
-        }
-
+        _logger.LogInformation("Opening project: {Folder}", projectFolder);
+        _lifecycleService.Open(projectFolder);
+        
+        // Регистрация встроенных функций
         RegisterBuiltinFunctions();
 
-        // Загружаем аварии
-        _alarmManager = LoadAlarms();
-
-        _hasUnsavedChanges = false;
-        OnProjectChanged?.Invoke();
+        _logger.LogInformation("Project opened: {Folder}", projectFolder);
     }
 
     /// <summary>
@@ -220,77 +221,27 @@ public class ProjectManager
     /// </summary>
     public void SaveAll()
     {
-        if (string.IsNullOrEmpty(_projectFolder))
-            throw new InvalidOperationException("Project folder is not set");
-
-        Directory.CreateDirectory(_registryFolder);
-        Directory.CreateDirectory(_programsFolder);
-
-        AstroSerializer.SaveDataTypeRegistry(_state.TypeRegistry, _registryFolder);
-        AstroSerializer.SaveFormRegistry(_state.FormRegistry, _registryFolder);
-        AstroSerializer.SaveGlobalTables(_state.GlobalTables, _registryFolder);
-
-        foreach (var program in _state.Programs.Values)
-        {
-            AstroSerializer.SaveProgram(program, _programsFolder);
-        }
-
-        // Сохраняем аварии
-        SaveAlarms();
-
-        _hasUnsavedChanges = false;
+        _logger.LogInformation("Saving all project data");
+        _lifecycleService.SaveAll();
     }
-
+        
     /// <summary>
     /// Сохраняет отдельную программу (для автосохранения при изменении).
     /// </summary>
     public void SaveProgram(string programName)
     {
-        if (_state.Programs.TryGetValue(programName, out var program))
-        {
-            AstroSerializer.SaveProgram(program, _programsFolder);
-            _hasUnsavedChanges = true;
-        }
+        _logger.LogDebug("Saving program: {ProgramName}", programName);
+        _lifecycleService.SaveProgram(programName);
     }
-
-    /// <summary>
-    /// Добавляет программу в проект.
-    /// </summary>
-    public void AddProgram(Programs.AstroProgram program)
-    {
-        _state.Programs[program.Name] = program;
-        _hasUnsavedChanges = true;
-        OnProjectChanged?.Invoke();
-    }
-
-    /// <summary>
-    /// Удаляет программу из проекта.
-    /// </summary>
-    public bool RemoveProgram(string name)
-    {
-        if (_state.Programs.Remove(name))
-        {
-            _hasUnsavedChanges = true;
-            OnProjectChanged?.Invoke();
-            return true;
-        }
-        return false;
-    }
-
+        
+    // === Делегирование сервисам ===
+    
     /// <summary>
     /// Создаёт интерпретатор для выполнения программы.
     /// </summary>
-    public AstroInterpreter CreateInterpreter()
+    public AstroInterpreterEx CreateInterpreter()
     {
-        var context = new InterpreterContext
-        {
-            TypeRegistry = _state.TypeRegistry,
-            FormRegistry = _state.FormRegistry,
-            GlobalTables = _state.GlobalTables,
-            Functions = _state.Functions,
-            ProgramRegistry = _state.Programs
-        };
-        return new AstroInterpreter(context, _pluginManager);
+        return _interpreterHostingService.CreateInterpreter();
     }
 
     /// <summary>
@@ -298,206 +249,19 @@ public class ProjectManager
     /// </summary>
     public AstroScheduler CreateScheduler()
     {
-        var sched = new AstroScheduler
-        {
-            GlobalTables = _state.GlobalTables,
-            Functions = _state.Functions,
-            ProgramRegistry = _state.Programs,
-            TypeRegistry = _state.TypeRegistry,
-            InterruptService = Interrupts,
-            TimerService = Timers
-        };
-        _scheduler = sched;
-        return sched;
+        return _interpreterHostingService.CreateScheduler(
+            _state.GlobalTables,
+            _state.Programs,
+            _typeService.TypeRegistry,
+            _typeService.FormRegistry,
+            _state.Functions
+        );
     }
 
-    // ========== Приватные методы инициализации ==========
-
-    private void RegisterPrimitives()
-    {
-        var primitives = new (string Id, string Name, BuiltInPrimitive Prim)[]
-        {
-            ("sbyte", "SBYTE", BuiltInPrimitive.SByte),
-            ("byte", "BYTE", BuiltInPrimitive.Byte),
-            ("short", "SHORT", BuiltInPrimitive.Short),
-            ("ushort", "USHORT", BuiltInPrimitive.UShort),
-            ("int", "INT", BuiltInPrimitive.Int),
-            ("uint", "UINT", BuiltInPrimitive.UInt),
-            ("long", "LONG", BuiltInPrimitive.Long),
-            ("ulong", "ULONG", BuiltInPrimitive.ULong),
-            ("float", "FLOAT", BuiltInPrimitive.Float),
-            ("double", "DOUBLE", BuiltInPrimitive.Double),
-            ("decimal", "DECIMAL", BuiltInPrimitive.Decimal),
-            ("bool", "BOOL", BuiltInPrimitive.Bool),
-            ("char", "CHAR", BuiltInPrimitive.Char),
-            ("string", "STRING", BuiltInPrimitive.String)
-        };
-
-        foreach (var (id, name, prim) in primitives)
-        {
-            if (_state.TypeRegistry.GetTypeById(id) == null)
-            {
-                var type = new PrimitiveDataType
-                {
-                    Id = id,
-                    Name = name,
-                    Primitive = prim,
-                    Category = DataTypeCategory.Core
-                };
-                _state.TypeRegistry.RegisterType(type);
-            }
-        }
-
-        // Системные типы-псевдонимы
-        RegisterAliasIfMissing("real", "REAL", "double", DataTypeCategory.System);
-        RegisterAliasIfMissing("position", "POSITION", null, DataTypeCategory.System, fields: new List<StructField>
-        {
-            new() { Name = "X", TypeId = "double" },
-            new() { Name = "Y", TypeId = "double" },
-            new() { Name = "Z", TypeId = "double" },
-            new() { Name = "A", TypeId = "double" },
-            new() { Name = "B", TypeId = "double" },
-            new() { Name = "C", TypeId = "double" }
-        });
-
-        _state.TypeRegistry.ResolveReferences();
-    }
-
-    private void RegisterAliasIfMissing(string id, string name, string? baseTypeId, DataTypeCategory category, List<StructField>? fields = null)
-    {
-        if (_state.TypeRegistry.GetTypeById(id) != null) return;
-
-        if (fields != null)
-        {
-            var structType = new StructDataType
-            {
-                Id = id,
-                Name = name,
-                Category = category,
-                Fields = fields
-            };
-            _state.TypeRegistry.RegisterType(structType);
-        }
-        else if (baseTypeId != null)
-        {
-            var alias = new AliasDataType
-            {
-                Id = id,
-                Name = name,
-                Category = category,
-                BaseTypeId = baseTypeId
-            };
-            _state.TypeRegistry.RegisterType(alias);
-        }
-    }
-
-    private void RegisterBuiltinForms()
-    {
-        _state.FormRegistry.Clear();
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateAssignmentForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateWhileForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndWhileForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateForForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndForForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateForEachForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndForEachForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateIfForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateElseForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndIfForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateSwitchForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateCaseForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateDefaultForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndSwitchForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateCallForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateReturnForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateLabelForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateJumpLblForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateJumpIfForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateBreakForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateContinueForm());
-
-        // Формы аварий
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateAlarmRaiseForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateAlarmClearForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateAlarmAckForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateAlarmClearAllForm());
-
-        // Формы прерываний
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateInterruptDeclareForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateInterruptOnForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateInterruptOffForm());
-
-        // Формы таймеров
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateTimerDeclareForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateTimerOnForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateTimerOffForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateTimerResetForm());
-
-        // Форма WAIT
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateWaitForm());
-
-        // Формы обработки исключений
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateTryForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateCatchForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateFinallyForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateEndTryForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateThrowForm());
-        _state.FormRegistry.RegisterForm(BuiltinForms.CreateRethrowForm());
-    }
-
-    private void RegisterBuiltinFunctions()
-    {
-        _state.Functions.Clear();
-        var builtins = BuiltinFunctions.GetFunctions();
-        foreach (var kv in builtins)
-            _state.Functions[kv.Key] = kv.Value;
-    }
-
-    // ========== Управление авариями ==========
-
-    private AlarmManager CreateAlarmManager()
-    {
-        var mgr = new AlarmManager();
-        mgr.RegisterSystemAlarms();
-        return mgr;
-    }
-
-    private void SaveAlarms()
-    {
-        if (_alarmManager == null) return;
-        var snapshot = new AlarmStateSnapshot
-        {
-            Definitions = _alarmManager.Definitions.Values.ToList(),
-            ActiveAlarms = _alarmManager.ActiveAlarms.Values.ToList(),
-            History = _alarmManager.AlarmHistory.ToList()
-        };
-        var path = Path.Combine(_registryFolder, "alarms.json");
-        AstroSerializer.SaveToFile(snapshot, path);
-    }
-
-    private AlarmManager LoadAlarms()
-    {
-        var mgr = new AlarmManager();
-        var path = Path.Combine(_registryFolder, "alarms.json");
-        if (File.Exists(path))
-        {
-            try
-            {
-                var snapshot = AstroSerializer.LoadFromFile<AlarmStateSnapshot>(path);
-                if (snapshot != null)
-                {
-                    foreach (var def in snapshot.Definitions)
-                        mgr.RegisterAlarm(def);
-                    // Активные экземпляры восстанавливаются через Raise
-                    // (упрощённо — регистрируем, но не поднимаем заново)
-                }
-            }
-            catch { /* игнорируем ошибки загрузки */ }
-        }
-        else
-        {
-            mgr.RegisterSystemAlarms();
-        }
-        return mgr;
-    }
+    // === Методы для работы с программами (делегирование сервису) ===
+    public void AddProgram(Programs.AstroProgram program) => _programService.AddProgram(program);
+    public bool RemoveProgram(string name) => _programService.RemoveProgram(name);
+    public Programs.AstroProgram? GetProgram(string name) => _programService.GetProgram(name);
+    public Programs.AstroProgram CreateProgram(string name, string author = "", string description = "") 
+        => _programService.CreateProgram(name, author, description);
 }

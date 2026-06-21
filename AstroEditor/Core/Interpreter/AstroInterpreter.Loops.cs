@@ -7,7 +7,7 @@ using AstroEditor.Core.Variables;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     #region WHILE
 
@@ -17,7 +17,8 @@ public partial class AstroInterpreter
         var condField = GetFieldValue<ExpressionFieldValue>(instruction, "condition");
         var maxIterField = TryGetFieldValue<ConstantFieldValue>(instruction, "maxIterations", out var maxIterVal) ? maxIterVal : null;
 
-        var exprNode = _parser.Parse(condField.Expression);
+        // ✅ P1-6: Используем кэш выражений
+        var exprNode = ParseCachedExpression(condField.Expression);
         var evalContext = CreateExpressionContext();
         var condition = _evaluator.Evaluate(exprNode, evalContext);
 
@@ -102,10 +103,11 @@ public partial class AstroInterpreter
             throw new Exception($"Variable '{varField.VariableName}' not found");
 
         var evalContext = CreateExpressionContext();
-        var startVal = _evaluator.Evaluate(_parser.Parse(startField.Expression), evalContext);
-        var endVal = _evaluator.Evaluate(_parser.Parse(endField.Expression), evalContext);
+        // ✅ P1-6: Используем кэш выражений
+        var startVal = _evaluator.Evaluate(ParseCachedExpression(startField.Expression), evalContext);
+        var endVal = _evaluator.Evaluate(ParseCachedExpression(endField.Expression), evalContext);
         object? stepVal = stepField != null
-            ? _evaluator.Evaluate(_parser.Parse(stepField.Expression), evalContext)
+            ? _evaluator.Evaluate(ParseCachedExpression(stepField.Expression), evalContext)
             : 1;
 
         if (!IsNumeric(startVal) || !IsNumeric(endVal) || !IsNumeric(stepVal))
@@ -250,7 +252,22 @@ public partial class AstroInterpreter
         if (!loop.IsForEachLoop)
             throw new Exception("EndForEach found without ForEach");
         
-        _state.CurrentLineIndex = loop.StartLineIndex;
+        loop.CurrentIndex++;
+        
+        if (loop.CurrentIndex >= loop.CollectionValues?.Count)
+        {
+            _state.LoopStack.Pop();
+            _state.CurrentLineIndex = loop.EndLineIndex;
+        }
+        else
+        {
+            var itemVar = FindVariable("", loop.ItemVariableName!);
+            if (itemVar == null)
+                throw new Exception($"Item variable '{loop.ItemVariableName}' not found");
+            
+            itemVar.Value = loop.CollectionValues[loop.CurrentIndex];
+            _state.CurrentLineIndex = loop.StartLineIndex;
+        }
     }
     
     #endregion

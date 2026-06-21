@@ -7,7 +7,7 @@ using AstroEditor.Core.Expressions;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     [InstructionHandler("core.wait")]
     private void ExecuteWait(Instruction instruction)
@@ -21,7 +21,8 @@ public partial class AstroInterpreter
             if (TryGetFieldValue<ConstantFieldValue>(instruction, "timeMs", out var timeField))
                 timeMs = Convert.ToInt32(timeField.Value);
 
-            Thread.Sleep(timeMs);
+            // ✅ P2: Task.Delay вместо Thread.Sleep (не блокирует пул потоков так сильно)
+            Task.Delay(timeMs).Wait(_state.StopRequested ? CancellationToken.None : default);
         }
         else if (mode == "Condition")
         {
@@ -36,8 +37,6 @@ public partial class AstroInterpreter
                 return;
 
             var stopwatch = Stopwatch.StartNew();
-            var parser = new ExpressionParser();
-            var evaluator = new ExpressionEvaluator();
 
             while (true)
             {
@@ -47,8 +46,9 @@ public partial class AstroInterpreter
                 try
                 {
                     var ctx = CreateExpressionContext();
-                    var node = parser.Parse(conditionExpr);
-                    var result = evaluator.Evaluate(node, ctx);
+                    // ✅ P1-6: Используем кэш выражений
+                    var node = ParseCachedExpression(conditionExpr);
+                    var result = _evaluator.Evaluate(node, ctx);
 
                     if (Convert.ToBoolean(result))
                         return;
@@ -58,7 +58,8 @@ public partial class AstroInterpreter
                 if (timeoutMs > 0 && stopwatch.ElapsedMilliseconds >= timeoutMs)
                     return;
 
-                Thread.Sleep(50);
+                // ✅ P2: Task.Delay вместо Thread.Sleep
+                Task.Delay(50).Wait(_state.StopRequested ? CancellationToken.None : default);
             }
         }
     }

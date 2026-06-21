@@ -1,23 +1,23 @@
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using AstroEditor.Core.Types;
 using AstroEditor.Core.Variables;
 
 namespace AstroEditor.Core.Tables;
 
+/// <summary>
+/// Набор таблиц переменных.
+/// ✅ P1-1: Использует ConcurrentDictionary для потокобезопасности.
+/// </summary>
 public class VariableTableSet
 {
     [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
     [JsonPropertyName("isGlobal")] public bool IsGlobal { get; set; }
-    [JsonPropertyName("tables")] public Dictionary<string, TypedVariableTable> Tables { get; set; } = new();
+    [JsonPropertyName("tables")] public ConcurrentDictionary<string, TypedVariableTable> Tables { get; set; } = new();
 
     public TypedVariableTable GetOrCreateTable(DataType type)
     {
-        if (!Tables.TryGetValue(type.Id, out var table))
-        {
-            table = new TypedVariableTable { TypeId = type.Id, Type = type };
-            Tables[type.Id] = table;
-        }
-        return table;
+        return Tables.GetOrAdd(type.Id, _ => new TypedVariableTable { TypeId = type.Id, Type = type });
     }
 
     public void AddVariable(Variable variable, DataTypeRegistry registry)

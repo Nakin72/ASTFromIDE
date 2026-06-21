@@ -142,51 +142,6 @@
   {
     "Program": "MainProgram",
     "Line": 11,
-    "FormId": "core.switch",
-    "FieldName": "expression",
-    "ExpressionText": "Counter",
-    "Ast": {
-      "$type": "variable",
-      "name": "Counter",
-      "tableSetName": null
-    }
-  },
-  {
-    "Program": "MainProgram",
-    "Line": 12,
-    "FormId": "core.case",
-    "FieldName": "value",
-    "ExpressionText": "2",
-    "Ast": {
-      "$type": "constant",
-      "value": 2
-    }
-  },
-  {
-    "Program": "MainProgram",
-    "Line": 13,
-    "FormId": "core.assign",
-    "FieldName": "expression",
-    "ExpressionText": "100",
-    "Ast": {
-      "$type": "constant",
-      "value": 100
-    }
-  },
-  {
-    "Program": "MainProgram",
-    "Line": 15,
-    "FormId": "core.assign",
-    "FieldName": "expression",
-    "ExpressionText": "0",
-    "Ast": {
-      "$type": "constant",
-      "value": 0
-    }
-  },
-  {
-    "Program": "MainProgram",
-    "Line": 17,
     "FormId": "core.for",
     "FieldName": "start",
     "ExpressionText": "Counter \u002B 1",
@@ -206,7 +161,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 17,
+    "Line": 11,
     "FormId": "core.for",
     "FieldName": "end",
     "ExpressionText": "Counter \u002B 3",
@@ -226,7 +181,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 17,
+    "Line": 11,
     "FormId": "core.for",
     "FieldName": "step",
     "ExpressionText": "1",
@@ -237,7 +192,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 18,
+    "Line": 12,
     "FormId": "core.assign",
     "FieldName": "expression",
     "ExpressionText": "Sum \u002B Counter",
@@ -258,7 +213,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 19,
+    "Line": 13,
     "FormId": "core.if",
     "FieldName": "condition",
     "ExpressionText": "Sum \u003E 50",
@@ -278,7 +233,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 23,
+    "Line": 17,
     "FormId": "core.assign",
     "FieldName": "expression",
     "ExpressionText": "Counter \u002B 1",
@@ -298,7 +253,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 24,
+    "Line": 18,
     "FormId": "core.if",
     "FieldName": "condition",
     "ExpressionText": "(Counter % 2) == 0",
@@ -326,7 +281,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 27,
+    "Line": 21,
     "FormId": "core.jumplbl",
     "FieldName": "labelName",
     "ExpressionText": "START",
@@ -338,7 +293,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 28,
+    "Line": 22,
     "FormId": "core.lbl",
     "FieldName": "labelName",
     "ExpressionText": "END",
@@ -350,7 +305,7 @@
   },
   {
     "Program": "MainProgram",
-    "Line": 29,
+    "Line": 23,
     "FormId": "core.return",
     "FieldName": "value",
     "ExpressionText": "Sum",

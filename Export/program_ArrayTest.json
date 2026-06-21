@@ -3,8 +3,8 @@
   "author": "Demo",
   "description": "\u0422\u0435\u0441\u0442 \u043C\u0430\u0441\u0441\u0438\u0432\u043E\u0432 \u0438 \u0432\u0441\u0442\u0440\u043E\u0435\u043D\u043D\u044B\u0445 \u0444\u0443\u043D\u043A\u0446\u0438\u0439",
   "version": "1.0",
-  "created": "2026-06-20T13:20:49.6722568Z",
-  "modified": "2026-06-20T13:20:49.6722568Z",
+  "created": "2026-06-21T07:29:57.6785649Z",
+  "modified": "2026-06-21T07:29:57.678565Z",
   "returnTypeId": "int",
   "isMenuFunction": false,
   "isBackground": false,
@@ -14,6 +14,32 @@
     "name": "LocalVariables",
     "isGlobal": false,
     "tables": {
+      "int": {
+        "typeId": "int",
+        "variables": [
+          {
+            "name": "Sum",
+            "typeId": "int",
+            "value": 3,
+            "comment": null,
+            "constraints": null
+          },
+          {
+            "name": "Item",
+            "typeId": "int",
+            "value": 5,
+            "comment": null,
+            "constraints": null
+          },
+          {
+            "name": "Size",
+            "typeId": "int",
+            "value": -1,
+            "comment": null,
+            "constraints": null
+          }
+        ]
+      },
       "string": {
         "typeId": "string",
         "variables": [
@@ -34,32 +60,6 @@
             "name": "Message",
             "typeId": "string",
             "value": "Hello World",
-            "comment": null,
-            "constraints": null
-          }
-        ]
-      },
-      "int": {
-        "typeId": "int",
-        "variables": [
-          {
-            "name": "Sum",
-            "typeId": "int",
-            "value": 3,
-            "comment": null,
-            "constraints": null
-          },
-          {
-            "name": "Item",
-            "typeId": "int",
-            "value": 10,
-            "comment": null,
-            "constraints": null
-          },
-          {
-            "name": "Size",
-            "typeId": "int",
-            "value": -1,
             "comment": null,
             "constraints": null
           }

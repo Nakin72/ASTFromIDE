@@ -8,7 +8,7 @@ using AstroEditor.Core.Variables;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     #region CALL / RETURN
 
@@ -47,7 +47,7 @@ public partial class AstroInterpreter
         {
             Name = calledProgram.Name + "_Local",
             IsGlobal = false,
-            Tables = new Dictionary<string, TypedVariableTable>()
+            Tables = new System.Collections.Concurrent.ConcurrentDictionary<string, TypedVariableTable>()
         };
 
         foreach (var kv in calledProgram.LocalTables.Tables)
@@ -99,7 +99,8 @@ public partial class AstroInterpreter
         {
             if (valueField is ExpressionFieldValue exprField)
             {
-                var exprNode = _parser.Parse(exprField.Expression);
+                // ✅ P1-6: Используем кэш выражений
+                var exprNode = ParseCachedExpression(exprField.Expression);
                 var evalContext = CreateExpressionContext();
                 _state.ReturnValue = _evaluator.Evaluate(exprNode, evalContext);
             }
@@ -160,7 +161,8 @@ public partial class AstroInterpreter
         var condField = GetFieldValue<ExpressionFieldValue>(instruction, "condition");
         var labelField = GetFieldValue<ConstantFieldValue>(instruction, "labelName");
 
-        var exprNode = _parser.Parse(condField.Expression);
+        // ✅ P1-6: Используем кэш выражений
+        var exprNode = ParseCachedExpression(condField.Expression);
         var evalContext = CreateExpressionContext();
         var condition = _evaluator.Evaluate(exprNode, evalContext);
 

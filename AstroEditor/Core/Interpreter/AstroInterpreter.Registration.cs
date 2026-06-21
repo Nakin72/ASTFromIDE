@@ -7,7 +7,7 @@ using AstroEditor.Core.Plugins;
 
 namespace AstroEditor.Core.Interpreter;
 
-public partial class AstroInterpreter
+public partial class AstroInterpreterEx
 {
     /// <summary>
     /// Метод для регистрации внешних обработчиков.

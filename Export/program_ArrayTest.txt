@@ -1,38 +1,39 @@
 ╔══════════════════════════════════════════════════════════╗
-║  Программа: ArrayTest                                    ║
+║  ПРОГРАММА: ArrayTest                                      ║
 ╠══════════════════════════════════════════════════════════╣
-│  Автор: Demo                                             │
-│  Версия: 1.0                                             │
-│  Описание: Тест массивов и встроенных функций            │
-│  Строк: 13                                               │
+║  Автор: Demo                                             ║
+║  Версия: 1.0                                             ║
+║  Описание: Тест массивов и встроенных функций            ║
+║  Строк инструкций: 13                                     ║
+║  Аргументов: 0                                          ║
+║  Локальных переменных: 6                                      ║
+║  Макс. циклов: 100                                        ║
 ╠══════════════════════════════════════════════════════════╣
-│  АРГУМЕНТЫ:
+║  ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ:                                     ║
+║    • Sum                  (INT     ) = 3                    ║
+║    • Item                 (INT     ) = 5                    ║
+║    • Size                 (INT     ) = -1                   ║
+║    • MyArray              (STRING  ) = System.Collections.Generic.... ║
+║    • Message              (STRING  ) = Hello World          ║
+║    • X                    (DOUBLE  ) = 4                    ║
 ╠══════════════════════════════════════════════════════════╣
-│  ЛОКАЛЬНЫЕ ПЕРЕМЕННЫЕ:
-│    • MyArray (STRING) = System.Collections.Generic.List`1[System.Object]
-│    • Message (STRING) = Hello World
-│    • Sum (INT) = 3
-│    • Item (INT) = 10
-│    • Size (INT) = -1
-│    • X (DOUBLE) = 4
-╠══════════════════════════════════════════════════════════╣
-│  ИНСТРУКЦИИ:
-╠═══════╦══════════════════════════════════════════════════╣
-║ Строка║  Инструкция                                      ║
-╠═══════╬══════════════════════════════════════════════════╣
-║     1 ║  core.assign                                        ; Size = SIZE(MyArray)
-║     2 ║  core.foreach                                       ; FOREACH Item IN MyArray
-║     3 ║  core.assign                                        ; Sum = Sum + Item
-║     4 ║  core.endforeach                                   
-║     5 ║  core.assign                                        ; Item = 10
-║     6 ║  core.assign                                        ; ADD(MyArray, 10)
-║     7 ║  core.assign                                        ; Index = FIND(MyArray, 3)
-║     8 ║  core.assign                                        ; Size = SIZE(SLICE(MyArray, 1, 3))
-║     9 ║  core.assign                                        ; MyArray = RANGE(1, 5, 1)
-║    10 ║  core.assign                                        ; X = SIN(PI/2)
-║    11 ║  core.assign                                        ; X = SQRT(16)
-║    12 ║  core.assign                                        ; Message = 'Hello World'
-║    13 ║  core.return                                       
-╚═══════╩══════════════════════════════════════════════════╝
+║  ИНСТРУКЦИИ:                                               ║
+╠════════╦══════════════════════════════════════════════════╣
+║ № строки║  Форма                                           ║
+╠════════╬══════════════════════════════════════════════════╣
+║      1 ║  Assign (variable=LocalVariables.Size (int), expres║
+║      2 ║  ForEach (itemVariable=LocalVariables.Item (int), c║
+║      3 ║  Assign (variable=LocalVariables.Sum (int), express║
+║      4 ║  EndForEach                                        ║
+║      5 ║  Assign (variable=LocalVariables.Item (int), expres║
+║      6 ║  Assign (variable=LocalVariables.Size (int), expres║
+║      7 ║  Assign (variable=LocalVariables.Size (int), expres║
+║      8 ║  Assign (variable=LocalVariables.Sum (int), express║
+║      9 ║  Assign (variable=LocalVariables.MyArray (string), ║
+║     10 ║  Assign (variable=LocalVariables.X (double), expres║
+║     11 ║  Assign (variable=LocalVariables.X (double), expres║
+║     12 ║  Assign (variable=LocalVariables.Message (string), ║
+║     13 ║  Return (value=Sum)                                ║
+╚════════╩══════════════════════════════════════════════════╝
 
-Экспортировано: 20.06.2026 18:20:51
+Экспортировано: 21.06.2026 12:29:59

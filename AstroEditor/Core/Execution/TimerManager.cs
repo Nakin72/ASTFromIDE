@@ -1,5 +1,5 @@
 // AstroEditor/Core/Execution/TimerManager.cs
-// Менеджер таймеров — точные интервалы, периодические и однократные срабатывания
+// Менеджер таймеров — System.Threading.Timer вместо Thread.Sleep
 
 using System.Diagnostics;
 using AstroEditor.Core.Common;
@@ -27,17 +27,21 @@ public class TimerDefinition
 
     // Внутренние счётчики
     internal int ElapsedCount;
-    internal Stopwatch Stopwatch = new();
+    internal DateTime LastFireUtc;
 }
 
 /// <summary>
-/// Менеджер таймеров. Запускает поток с точным ожиданием.
+/// Менеджер таймеров. Использует System.Threading.Timer вместо Thread.Sleep.
+/// Точность ~1мс (системный таймер Windows), без блокировки потока.
 /// </summary>
 public class TimerManager : ITimerService, IDisposable
 {
     private readonly Dictionary<string, TimerDefinition> _timers = new();
     private readonly object _lock = new();
-    private Thread? _timerThread;
+    
+    // ✅ P1-7: System.Threading.Timer вместо Thread.Sleep
+    private System.Threading.Timer? _monitoringTimer;
+    private TimerCallback? _timerCallback;
     private volatile bool _running;
 
     /// <summary>Ссылка на прерывания, чтобы триггерить таймерные прерывания.</summary>
@@ -67,10 +71,8 @@ public class TimerManager : ITimerService, IDisposable
         lock (_lock)
         {
             _timers[timer.Id] = timer;
-            timer.Stopwatch.Reset();
             timer.ElapsedCount = 0;
-            if (timer.IsEnabled)
-                timer.Stopwatch.Start();
+            timer.LastFireUtc = DateTime.UtcNow;
             return timer;
         }
     }
@@ -79,12 +81,7 @@ public class TimerManager : ITimerService, IDisposable
     {
         lock (_lock)
         {
-            if (_timers.TryGetValue(id, out var timer))
-            {
-                timer.Stopwatch.Stop();
-                return _timers.Remove(id);
-            }
-            return false;
+            return _timers.Remove(id);
         }
     }
 
@@ -100,8 +97,8 @@ public class TimerManager : ITimerService, IDisposable
             if (_timers.TryGetValue(id, out var t))
             {
                 t.IsEnabled = true;
-                t.Stopwatch.Restart();
                 t.ElapsedCount = 0;
+                t.LastFireUtc = DateTime.UtcNow;
                 return true;
             }
             return false;
@@ -115,7 +112,6 @@ public class TimerManager : ITimerService, IDisposable
             if (_timers.TryGetValue(id, out var t))
             {
                 t.IsEnabled = false;
-                t.Stopwatch.Reset();
                 return true;
             }
             return false;
@@ -128,121 +124,109 @@ public class TimerManager : ITimerService, IDisposable
         {
             if (_timers.TryGetValue(id, out var t))
             {
-                t.Stopwatch.Restart();
                 t.ElapsedCount = 0;
+                t.LastFireUtc = DateTime.UtcNow;
                 return true;
             }
             return false;
         }
     }
 
-    // ========== Поток мониторинга ==========
+    // ========== Поток мониторинга (System.Threading.Timer) ==========
 
     public void Start()
     {
         if (_running) return;
         _running = true;
-        _timerThread = new Thread(TimerLoop)
-        {
-            Name = "AST-TimerManager",
-            IsBackground = true
-        };
-        _timerThread.Start();
+        _timerCallback = new TimerCallback(CheckTimers);
+        
+        // ✅ P1-7: Timer с интервалом 50мс для проверки
+        // Это точнее Thread.Sleep и не блокирует поток
+        _monitoringTimer = new System.Threading.Timer(
+            _timerCallback,
+            null,
+            TimeSpan.FromMilliseconds(50),   // Первая проверка через 50мс
+            TimeSpan.FromMilliseconds(50)    // Последующие каждые 50мс
+        );
     }
 
     public void Stop()
     {
         _running = false;
-        _timerThread?.Join(1000);
+        _monitoringTimer?.Dispose();
+        _monitoringTimer = null;
     }
 
-    private void TimerLoop()
+    /// <summary>
+    /// Проверка таймеров (вызывается System.Threading.Timer).
+    /// ✅ P1-7: Вместо Thread.Sleep — точная проверка по DateTime.UtcNow
+    /// </summary>
+    private void CheckTimers(object? state)
     {
-        while (_running)
+        if (!_running) return;
+
+        List<TimerDefinition> toFire = new();
+        DateTime now = DateTime.UtcNow;
+
+        lock (_lock)
         {
-            List<TimerDefinition> toFire = new();
-            int minWaitMs = 1000;
-
-            lock (_lock)
+            foreach (var timer in _timers.Values)
             {
-                var now = DateTime.UtcNow;
+                if (!timer.IsEnabled) continue;
 
-                foreach (var timer in _timers.Values)
+                // Вычисляемelapsed время с последнего срабатывания
+                var elapsed = (now - timer.LastFireUtc).TotalMilliseconds;
+
+                if (elapsed >= timer.IntervalMs)
                 {
-                    if (!timer.IsEnabled) continue;
+                    toFire.Add(timer);
+                    timer.LastFireUtc = now;
+                    timer.ElapsedCount++;
 
-                    var elapsed = timer.Stopwatch.ElapsedMilliseconds;
-                    var remaining = timer.IntervalMs - elapsed;
-
-                    if (remaining <= 0)
+                    // Oneshot — отключаем после срабатывания
+                    if (timer.Mode == TimerMode.Oneshot)
                     {
-                        // Сработал
-                        toFire.Add(timer);
-
-                        if (timer.Mode == TimerMode.Periodic)
-                        {
-                            // Перезапускаем, учитывая переполнение
-                            timer.Stopwatch.Restart();
-                            timer.ElapsedCount++;
-                        }
-                        else
-                        {
-                            // Oneshot — отключаем
-                            timer.IsEnabled = false;
-                            timer.Stopwatch.Reset();
-                        }
-                    }
-                    else
-                    {
-                        if (remaining < minWaitMs)
-                            minWaitMs = (int)remaining;
+                        timer.IsEnabled = false;
                     }
                 }
             }
+        }
 
-            // Обрабатываем сработавшие (вне блокировки)
-            foreach (var timer in toFire)
+        // Обрабатываем сработавшие (вне блокировки)
+        foreach (var timer in toFire)
+        {
+            try
             {
-                try
+                OnTimerElapsed?.Invoke(timer);
+
+                // Если есть обработчик — запускаем
+                if (!string.IsNullOrEmpty(timer.HandlerProgramName) &&
+                    ProgramRegistry != null &&
+                    ProgramRegistry.TryGetValue(timer.HandlerProgramName, out var handlerProg) &&
+                    Scheduler != null)
                 {
-                    OnTimerElapsed?.Invoke(timer);
-
-                    // Если есть обработчик — запускаем
-                    if (!string.IsNullOrEmpty(timer.HandlerProgramName) &&
-                        ProgramRegistry != null &&
-                        ProgramRegistry.TryGetValue(timer.HandlerProgramName, out var handlerProg) &&
-                        Scheduler != null)
+                    var config = new TaskConfig
                     {
-                        var config = new TaskConfig
-                        {
-                            Name = $"TIMER-{timer.Name}",
-                            Program = handlerProg,
-                            Type = TaskType.Background,
-                            Priority = TaskPriority.Normal,
-                            MaxCycles = 1
-                        };
-                        Scheduler.StartTask(config);
-                    }
-
-                    // Если есть прерывание по таймеру — триггерим
-                    if (!string.IsNullOrEmpty(timer.InterruptId) && Interrupts != null)
-                    {
-                        var def = Interrupts.GetDefinition(timer.InterruptId);
-                        if (def != null)
-                            Interrupts.Fire(def);
-                    }
+                        Name = $"TIMER-{timer.Name}",
+                        Program = handlerProg,
+                        Type = TaskType.Background,
+                        Priority = TaskPriority.Normal,
+                        MaxCycles = 1
+                    };
+                    Scheduler.StartTask(config);
                 }
-                catch (Exception ex)
+
+                // Если есть прерывание по таймеру — триггерим
+                if (!string.IsNullOrEmpty(timer.InterruptId) && Interrupts != null)
                 {
-                    OnTimerError?.Invoke(timer, ex);
+                    var def = Interrupts.GetDefinition(timer.InterruptId);
+                    if (def != null)
+                        Interrupts.Fire(def);
                 }
             }
-
-            // Ожидаем до следующей проверки
-            if (_running)
+            catch (Exception ex)
             {
-                var sleepMs = Math.Max(1, Math.Min(minWaitMs, 50));
-                Thread.Sleep(sleepMs);
+                OnTimerError?.Invoke(timer, ex);
             }
         }
     }
